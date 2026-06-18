@@ -51,7 +51,11 @@ def get_transformation_matrix_from_quat(quat):
 
 def simple_radius_gen_func(xyzs, c_xyzs):
     ### A simple emperical function to generate raidus based on the distances between end-effectors and the camera
-    radius = torch.clamp(1.0 - torch.sqrt(((xyzs-c_xyzs)**2).sum(-1))-0.07/(0.8-0.07), min=0, max=1) * 100
+    radius = torch.clamp(
+        1.0 - torch.sqrt(((xyzs - c_xyzs) ** 2).sum(-1)) - 0.07 / (0.8 - 0.07),
+        min=0,
+        max=1
+    ) * 100
     return radius
 
 
@@ -83,11 +87,14 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
     ee2cam_r = torch.matmul(w2c, pose_r_mat)
 
     correct_matrix = torch.tensor([
-                        [1, 0, 0, 0],
-                        [0, 1, 0, 0],
-                        [0, 0, 1, 0.23],
-                        [0, 0, 0, 1]
-                    ], dtype=torch.float32, device=pose.device).view(1,1,4,4)
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0.23],
+        [0, 0, 0, 1]
+    ],
+    dtype=torch.float32,
+    device=pose.device
+    ).view(1,1,4,4)
     ee2cam_l = torch.matmul(ee2cam_l, correct_matrix)
     ee2cam_r = torch.matmul(ee2cam_r, correct_matrix)
 
@@ -134,7 +141,14 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
             color_r = tuple(int(c * 255) for c in color_r)
 
             i_coord_list = []
-            for points, color, colors, radius, lr_tag, eef in zip([uvs_l[icam, i], uvs_r[icam, i]], [color_l, color_r], [color_list_l, color_list_r], [l_dist[i], r_dist[i]], ["left", "right"], [normalized_value_l, normalized_value_r]):
+            for points, color, colors, radius, lr_tag, eef in zip(
+                [uvs_l[icam, i], uvs_r[icam, i]],
+                [color_l, color_r],
+                [color_list_l, color_list_r],
+                [l_dist[i], r_dist[i]],
+                ["left", "right"],
+                [normalized_value_l, normalized_value_r]
+            ):
                 base = np.array(points[0]) # points:[4,3]
                 if base[0]<0 or base[0]>=w or base[1]<0 or base[1]>=h:
                     continue
