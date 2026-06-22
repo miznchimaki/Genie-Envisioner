@@ -40,12 +40,12 @@ def quaternion_to_matrix(quaternions: torch.Tensor) -> torch.Tensor:
 def get_transformation_matrix_from_quat(quat):
     ### quat: (b, 7)
     rot_quat = quat[:, 3:]
-    rot_quat = rot_quat[:, [3,0,1,2]]
+    rot_quat = rot_quat[:, [3, 0, 1, 2]]
     rot = quaternion_to_matrix(rot_quat)
-    trans = quat[:, :3]
+    trans = quat[:, : 3]
     output = torch.eye(4).unsqueeze(0).repeat(quat.shape[0], 1, 1)
-    output[:,:3,:3] = rot
-    output[:,:3, 3] = trans
+    output[:,: 3,: 3] = rot
+    output[:,: 3, 3] = trans
     return output
 
 
@@ -115,11 +115,11 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
 
     all_img_list = []
 
-    for icam in range(w2c.shape[0]):
+    for icam in range(w2c.shape[0]):  # traverse by camera viewpoint
         
-        l_xyz = pose[:, 0:3].clone()
-        r_xyz = pose[:, 8:11].clone()
-        c_xyz = c2w[icam,:,:3,3].clone()
+        l_xyz = pose[:, 0: 3].clone()
+        r_xyz = pose[:, 8: 11].clone()
+        c_xyz = c2w[icam, :, : 3, 3].clone()
 
         if radius_gen_func is None:
             l_dist = 50
@@ -129,18 +129,19 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
             r_dist = radius_gen_func(r_xyz, c_xyz)
 
         img_list = []
-        for i in range(pose.shape[0]):
+        for i in range(pose.shape[0]):  # traverse by time step
             
             img = np.zeros((h, w, 3), dtype=np.uint8) + 50
 
             normalized_value_l = pose[i, 7].item() / 120
             normalized_value_r = pose[i, 15].item() / 120
-            color_l = colormap_l(normalized_value_l)[:3]  # Get RGB values
-            color_r = colormap_r(normalized_value_r)[:3]  # Get RGB values
+            color_l = colormap_l(normalized_value_l)[: 3]  # Get RGB values
+            color_r = colormap_r(normalized_value_r)[: 3]  # Get RGB values
             color_l = tuple(int(c * 255) for c in color_l)
             color_r = tuple(int(c * 255) for c in color_r)
 
             i_coord_list = []
+            # draw the circle on EE pose map to reflect the distance between the left&right EEs and current camera
             for points, color, colors, radius, lr_tag, eef in zip(
                 [uvs_l[icam, i], uvs_r[icam, i]],
                 [color_l, color_r],
@@ -150,7 +151,7 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
                 [normalized_value_l, normalized_value_r]
             ):
                 base = np.array(points[0]) # points:[4,3]
-                if base[0]<0 or base[0]>=w or base[1]<0 or base[1]>=h:
+                if base[0] < 0 or base[0] >= w or base[1] < 0 or base[1] >= h:
                     continue
                 point = np.array(points[0][:2])
                 radius = int(radius)
@@ -158,18 +159,24 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
                 # color_circle = int(128*eef)+128
                 # cv2.circle(img, tuple(point), radius, (color_circle, color_circle, color_circle), 10)
 
-            for points, color, colors, lr_tag in zip([uvs_l[icam, i], uvs_r[icam, i]], [color_l, color_r], [color_list_l, color_list_r], ["left", "right"]):
+            # draw corresponding segments on EE pose map
+            for points, color, colors, lr_tag in zip(
+                [uvs_l[icam, i], uvs_r[icam, i]],
+                [color_l, color_r],
+                [color_list_l, color_list_r],
+                ["left", "right"]
+            ):
                 base = np.array(points[0]) # points:[4,3]
-                if base[0]<0 or base[0]>=w or base[1]<0 or base[1]>=h:
+                if base[0] < 0 or base[0] >= w or base[1] < 0 or base[1] >= h:
                     continue
                 for i, point in enumerate(points):
-                    point = np.array(point[:2])
+                    point = np.array(point[: 2])
                     if i == 0:
                         continue
                     else:
-                        cv2.line(img, tuple(base), tuple(point), colors[i-1], 8)
+                        cv2.line(img, tuple(base), tuple(point), colors[i - 1], 8)
 
-            img_list.append(img/255.)
+            img_list.append(img / 255.)
 
 
         img_list = np.stack(img_list, axis=0) ### t,h,w,c
