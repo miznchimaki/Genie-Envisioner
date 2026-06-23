@@ -1,5 +1,3 @@
-import os
-import sys
 import argparse
 from utils import import_custom_class
 
@@ -23,7 +21,6 @@ def main():
     Runner = import_custom_class(
         args.runner_class, args.runner_class_path, 
     )
-    
 
     if args.mode == "train":
         ### Trainer
@@ -55,8 +52,5 @@ def main():
         raise NotImplementedError
 
 
-
 if __name__ == "__main__":
-  
     main()
-    
