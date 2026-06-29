@@ -224,29 +224,32 @@ class AgiBotWorld(Dataset):
         total_frames = len(info)
         return total_frames
 
-    def get_frame_indexes(self, total_frames, ):
+    def get_frame_indexes(self, total_frames):
         """
-        select self.n_previous memory frames and self.action_chunk prediction frmaes
+        select self.n_previous memory frames and self.action_chunk prediction frames
         1. randomly select the end frame
         2. take frames from {end-action_chunk} to {end} as the prediction frames
         3. uniformly/randomly select memory frames from {end-self.sample_n_frames} to {end-action_chunk}
         """
 
         if self.fix_sidx is not None and self.fix_mem_idx is not None:
-            action_indexes = list(range(self.fix_sidx, self.fix_sidx+self.action_chunk))
-            frame_indexes = action_indexes[::self.video_temporal_stride]
+            action_indexes = list(range(self.fix_sidx, self.fix_sidx + self.action_chunk))
+            frame_indexes = action_indexes[:: self.video_temporal_stride]
             # print(self.fix_mem_idx + frame_indexes, self.fix_mem_idx + action_indexes)
             return self.fix_mem_idx + frame_indexes, self.fix_mem_idx + action_indexes
 
-        chunk_end = random.randint(self.action_chunk, total_frames+self.action_chunk)
+        chunk_end = random.randint(self.action_chunk, total_frames + self.action_chunk)
         indexes = np.array(list(range(chunk_end-self.sample_n_frames, chunk_end)))
-        indexes = np.clip(indexes, a_min=1, a_max=total_frames-1).tolist()
+        indexes = np.clip(indexes, a_min=1, a_max=total_frames - 1).tolist()
         video_end = indexes[-self.action_chunk:]
         mem_candidates = [
             indexes[int(i)] for i in range(0, self.sample_n_frames-self.action_chunk)
         ]
         if self.previous_pick_mode == 'uniform':
-            mem_indexes = [mem_candidates[int(i)] for i in np.linspace(0, len(mem_candidates)-1, self.n_previous).tolist()]
+            mem_indexes = [
+                mem_candidates[int(i)]
+                for i in np.linspace(0, len(mem_candidates)-1, self.n_previous).tolist()
+            ]
 
         elif self.previous_pick_mode == 'random':
             mem_indexes = [
@@ -268,10 +271,11 @@ class AgiBotWorld(Dataset):
 
         return frame_indexes, action_indexes
 
-
     def get_action_bias_std(self, domain_name):
-        return torch.tensor(self.StatisticInfo[domain_name + "_" + self.action_space]['mean']).unsqueeze(0), torch.tensor(self.StatisticInfo[domain_name + "_" + self.action_space]['std']).unsqueeze(0)+1e-6
-
+        return (
+            torch.tensor(self.StatisticInfo[domain_name + "_" + self.action_space]['mean']).unsqueeze(0),
+            torch.tensor(self.StatisticInfo[domain_name + "_" + self.action_space]['std']).unsqueeze(0) + 1e-6
+        )
 
     def get_action(self, h5_file, slices, domain_name):
         """
@@ -283,7 +287,7 @@ class AgiBotWorld(Dataset):
         action, delta_action = parse_h5(h5_file, slices=slices, delta_act_sidx=0, action_space=self.action_space)
 
         act_meanv, act_stdv = self.get_action_bias_std(domain_name)
-        state = torch.FloatTensor(action[self.n_previous-1:self.n_previous])
+        state = torch.FloatTensor(action[self.n_previous -1: self.n_previous])
         state = (state - act_meanv) / act_stdv
 
         if self.action_type == "absolute":
@@ -394,16 +398,16 @@ class AgiBotWorld(Dataset):
         input video should have shape (c,v,t,h,w)
         """
         c,v,t,h,w = video.shape
-        video = specific_transforms_norm(video.permute(1,2,0,3,4).reshape(-1,c,h,w)).reshape(v,t,c,h,w).permute(2,0,1,3,4)
+        video = specific_transforms_norm(
+            video.permute(1, 2, 0, 3, 4).reshape(-1, c, h, w)
+        ).reshape(v, t, c, h, w).permute(2, 0, 1, 3, 4)
         return video
 
-
-    def get_transform(self, ):
+    def get_transform(self):
         sample_size = self.sample_size
         specific_transforms_resize = self.pixel_transforms_resize
         specific_transforms_norm = self.pixel_transforms_norm
         return sample_size, specific_transforms_resize, specific_transforms_norm
-
 
     def get_long_recaption(self, step_captions, task_caption):
         newcap = []
@@ -437,7 +441,6 @@ class AgiBotWorld(Dataset):
         recap = allcap[cap_type]
         return recap
 
-
     def get_caption(self, label_info, task_caption):
         if self.use_unified_prompt:
             caption = self.unified_prompt
@@ -446,9 +449,7 @@ class AgiBotWorld(Dataset):
             caption = self.get_long_recaption(step_captions, task_caption)
         return caption
 
-
     def get_batch(self, idx, debug=False):
-
         video_root = self.dataset[idx][0]
         caminfo_root = self.dataset[idx][1]
         h5_file = os.path.join(self.dataset[idx][2], "proprio_stats.h5")
@@ -472,7 +473,7 @@ class AgiBotWorld(Dataset):
         ### c, n_view, total_frames, h, w
         if self.ignore_seek:
             ### used in the action-training stage to avoid seek future frames
-            vid_indexes = vid_indexes[:self.n_previous+1]
+            vid_indexes = vid_indexes[:self.n_previous + 1]
             end_frames = 1
 
         videos = self.seek_mp4(video_root, self.valid_cam, vid_indexes)
@@ -487,7 +488,6 @@ class AgiBotWorld(Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        
         if self.fix_epiidx is not None:
             video, video_root, intrinsics, extrinsics, actions, state, caption = self.get_batch(self.fix_epiidx)
         else:
@@ -507,4 +507,5 @@ class AgiBotWorld(Dataset):
             state=state,
             caption=caption,
         )
+
         return sample
