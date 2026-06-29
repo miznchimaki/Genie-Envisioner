@@ -228,8 +228,8 @@ class AgiBotWorld(Dataset):
         """
         select self.n_previous memory frames and self.action_chunk prediction frames
         1. randomly select the end frame
-        2. take frames from {end-action_chunk} to {end} as the prediction frames
-        3. uniformly/randomly select memory frames from {end-self.sample_n_frames} to {end-action_chunk}
+        2. take frames from {end - action_chunk} to {end} as the prediction frames
+        3. uniformly/randomly select memory frames from {end - self.sample_n_frames} to {end - action_chunk}
         """
 
         if self.fix_sidx is not None and self.fix_mem_idx is not None:
@@ -239,16 +239,16 @@ class AgiBotWorld(Dataset):
             return self.fix_mem_idx + frame_indexes, self.fix_mem_idx + action_indexes
 
         chunk_end = random.randint(self.action_chunk, total_frames + self.action_chunk)
-        indexes = np.array(list(range(chunk_end-self.sample_n_frames, chunk_end)))
+        indexes = np.array(list(range(chunk_end - self.sample_n_frames, chunk_end)))
         indexes = np.clip(indexes, a_min=1, a_max=total_frames - 1).tolist()
         video_end = indexes[-self.action_chunk:]
         mem_candidates = [
-            indexes[int(i)] for i in range(0, self.sample_n_frames-self.action_chunk)
+            indexes[int(i)] for i in range(0, self.sample_n_frames - self.action_chunk)
         ]
         if self.previous_pick_mode == 'uniform':
             mem_indexes = [
                 mem_candidates[int(i)]
-                for i in np.linspace(0, len(mem_candidates)-1, self.n_previous).tolist()
+                for i in np.linspace(0, len(mem_candidates) - 1, self.n_previous).tolist()
             ]
 
         elif self.previous_pick_mode == 'random':
@@ -265,7 +265,7 @@ class AgiBotWorld(Dataset):
         else:
             raise NotImplementedError(f"unsupported previous_pick_mode: {self.previous_pick_mode}")       
 
-        frame_indexes = mem_indexes + video_end[self.video_temporal_stride-1::self.video_temporal_stride]
+        frame_indexes = mem_indexes + video_end[self.video_temporal_stride - 1::self.video_temporal_stride]
         
         action_indexes = mem_indexes + video_end
 
