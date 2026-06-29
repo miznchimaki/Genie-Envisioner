@@ -58,6 +58,7 @@ from utils.data_utils import get_latents, get_text_conditions, gen_noise_from_co
 # ----------------------------------------------------
 from utils.extra_utils import act_metric
 
+
 LOG_LEVEL = "INFO"
 # LOG_LEVEL = "DEBUG"
 logger = get_logger("wm_runner")
@@ -84,11 +85,9 @@ class State:
     output_dir: str = None
 
 
-
 class Trainer:
 
     def __init__(self, config_file, to_log=True, output_dir=None) -> None:
-        
         cd = load(open(config_file, "r"), Loader=Loader)
         args = argparse.Namespace(**cd)
         args.lr = float(args.lr)
@@ -151,7 +150,6 @@ class Trainer:
 
         init_logging(self.save_folder, rank=self.state.accelerator.process_index)
 
-
     def _init_distributed(self):
         logging_dir = Path(self.args.output_dir, self.args.logging_dir)
         project_config = ProjectConfiguration(project_dir=self.args.output_dir, logging_dir=logging_dir)
@@ -203,7 +201,6 @@ class Trainer:
             
         self.state.weight_dtype = weight_dtype
 
-
     def _init_logging(self):
         logging.basicConfig(
             format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -219,14 +216,12 @@ class Trainer:
 
         logger.info("Initialized Trainer")
         logger.info(self.state.accelerator.state, main_process_only=False)
-        
 
     def _init_directories_and_repositories(self):
         if self.state.accelerator.is_main_process:
             self.args.output_dir = Path(self.args.output_dir)
             self.args.output_dir.mkdir(parents=True, exist_ok=True)
             self.state.output_dir = self.args.output_dir
-
 
     def prepare_dataset(self) -> None:
 
@@ -247,10 +242,8 @@ class Trainer:
         )
         logger.info(f">>>>>>>>>>>>>Total Train Eps: {len(self.train_dataset)}<<<<<<<<<<<<<<<<<<\n")
 
-
         if 'val' in self.args.data:
             self.prepare_val_dataset()
-
 
     def prepare_val_dataset(self) -> None:
         if not hasattr(self.args, "val_data_class"):
@@ -274,7 +267,6 @@ class Trainer:
             subset, batch_size=self.args.batch_size, shuffle=getattr(self.args, "val_shuffle", False)
         )
         logger.info(f">>>>>>>>>>>>>Total Validatoin Eps: {len(self.val_dataset)}<<<<<<<<<<<<<<<<<<\n")
-
 
     def prepare_models(self):
 
@@ -322,7 +314,6 @@ class Trainer:
         logger.info(f'SPATIAL_DOWN_RATIO of VAE :{self.SPATIAL_DOWN_RATIO}')
         logger.info(f'TEMPORAL_DOWN_RATIO of VAE :{self.TEMPORAL_DOWN_RATIO}')
 
-
         ### Load Diffusion Model
         diffusion_model_class = import_custom_class(
             self.args.diffusion_model_class, getattr(self.args, "diffusion_model_class_path", "transformers")
@@ -335,7 +326,6 @@ class Trainer:
         ).to(device, dtype=dtype)
         total_params = count_model_parameters(self.diffusion_model)
         logger.info(f'Total parameters for transformer model:{total_params}')
-
 
         ### Load Diffuser Scheduler
         diffusion_scheduler_class = import_custom_class(
@@ -350,7 +340,6 @@ class Trainer:
         self.pipeline_class = import_custom_class(
             self.args.pipeline_class, getattr(self.args, "pipeline_class_path", "diffusers")
         )
-
 
     def prepare_trainable_parameters(self):
         logger.info("Initializing trainable parameters")
@@ -373,7 +362,6 @@ class Trainer:
         # Enable TF32 for faster training on Ampere GPUs: https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
         if self.args.allow_tf32 and torch.cuda.is_available():
             torch.backends.cuda.matmul.allow_tf32 = True
-
 
     def prepare_optimizer(self):
         logger.info("Initializing optimizer and lr scheduler")
@@ -457,19 +445,16 @@ class Trainer:
 
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
-        
 
     def prepare_for_training(self):
         self.diffusion_model, self.optimizer, self.train_dataloader, self.lr_scheduler = self.state.accelerator.prepare(
             self.diffusion_model, self.optimizer, self.train_dataloader, self.lr_scheduler
         )
 
-
     def prepare_trackers(self):
         logger.info("Initializing trackers")
         tracker_name = self.args.tracker_name or "model_train"
         self.state.accelerator.init_trackers(tracker_name, config=self.args.__dict__)
-
 
     def train(self):
         logger.info("Starting training")
@@ -539,7 +524,7 @@ class Trainer:
                     future_video = video[:,:,mem_size:]
 
                     if self.args.return_action:
-                        future_video = future_video[:,:,:1].repeat(1,1,self.args.data['train']['chunk'],1,1)
+                        future_video = future_video[:, :, :1].repeat(1, 1, self.args.data['train']['chunk'], 1, 1)
 
                     # get the shape params
                     _, _, raw_frames, raw_height, raw_width = future_video.shape
@@ -602,7 +587,6 @@ class Trainer:
                             act_state = act_state.to(accelerator.device, dtype=weight_dtype).contiguous()
                         else:
                             act_state = None
-                            
 
                         actions = batch['actions'][:, -self.args.data['train']['action_chunk']:].to(accelerator.device, dtype=weight_dtype).contiguous()   # shape b,t,c
                         action_dim = actions.shape[-1]
@@ -779,8 +763,20 @@ class Trainer:
 
         accelerator.end_training()
 
-
-    def validate(self, accelerator, model_save_dir, global_step, n_view=1, n_chunk=30, image=None, prompt=None, cap=None, path=None, gt_actions=None, to_log=True):
+    def validate(
+        self,
+        accelerator,
+        model_save_dir,
+        global_step,
+        n_view=1,
+        n_chunk=30,
+        image=None,
+        prompt=None,
+        cap=None,
+        path=None,
+        gt_actions=None,
+        to_log=True
+    ):
 
         os.makedirs(model_save_dir,exist_ok=True)
 
@@ -824,7 +820,7 @@ class Trainer:
             n_view=v,
             return_action=self.args.return_action,
             n_prev=self.args.data['train']['n_previous'],
-            chunk=(self.args.data['train']['chunk']-1)//self.TEMPORAL_DOWN_RATIO+1,
+            chunk=(self.args.data['train']['chunk']-1) // self.TEMPORAL_DOWN_RATIO + 1,
             return_video=self.args.return_video,
             noise_seed=42,
             action_chunk=self.args.data['train']['action_chunk'],
@@ -860,4 +856,3 @@ class Trainer:
             if to_log:
                 for key, value in action_logs.items():
                     self.writer.add_scalar(key, value, global_step)
-

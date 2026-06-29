@@ -32,7 +32,8 @@ from data.utils.utils import intrinsic_transform, gen_crop_config, intrin_crop_t
 
 
 class AgiBotWorld(Dataset):
-    def __init__(self,
+    def __init__(
+        self,
         data_roots,
         domains,
         task_info_root,
@@ -153,7 +154,6 @@ class AgiBotWorld(Dataset):
                 with open(dataset_info_cache_path, "w") as f:
                     json.dump(self.dataset, f)
 
-
         self.length = len(self.dataset)
         zero_rank_print(f"data scale: {self.length}")
 
@@ -212,7 +212,6 @@ class AgiBotWorld(Dataset):
         self.fix_sidx = fix_sidx
         self.fix_mem_idx = fix_mem_idx
 
-
         ### load stat_file if provided
         self.StatisticInfo = StatisticInfo
         if stat_file is not None:
@@ -224,7 +223,6 @@ class AgiBotWorld(Dataset):
             info = json.load(f)
         total_frames = len(info)
         return total_frames
-
 
     def get_frame_indexes(self, total_frames, ):
         """
@@ -251,7 +249,15 @@ class AgiBotWorld(Dataset):
             mem_indexes = [mem_candidates[int(i)] for i in np.linspace(0, len(mem_candidates)-1, self.n_previous).tolist()]
 
         elif self.previous_pick_mode == 'random':
-            mem_indexes = [mem_candidates[i] for i in sorted(np.random.choice(list(range(0,len(mem_candidates)-1)), size=self.n_previous-1, replace=False).tolist())] + [mem_candidates[-1]]
+            mem_indexes = [
+                mem_candidates[i]
+                for i in sorted(np.random.choice(
+                        list(range(0, len(mem_candidates) - 1)),
+                        size=self.n_previous - 1,
+                        replace=False
+                    ).tolist()
+                )
+            ] + [mem_candidates[-1]]
 
         else:
             raise NotImplementedError(f"unsupported previous_pick_mode: {self.previous_pick_mode}")       
