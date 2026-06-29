@@ -533,7 +533,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
     def interrupt(self):
         return self._interrupt
 
-
     def decode_to_frames(self, latents, dtype, generator, device, batch_size, decode_timestep, decode_noise_scale):
         latents = self._denormalize_latents(latents, self.vae.latents_mean, self.vae.latents_std, getattr(self.vae.config, "scaling_factor", 1.0))
         latents = latents.to(dtype)
@@ -557,8 +556,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
 
         # return latents shape b,c,t,h,w ranging from -1 to 1
         return video.clamp(-1, 1)
-
-
 
     @torch.no_grad()
     def infer(
