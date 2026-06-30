@@ -1,4 +1,3 @@
-
 import sys
 import os
 
@@ -250,11 +249,11 @@ class AgiBotWorld(Dataset):
                 mem_candidates[int(i)]
                 for i in np.linspace(0, len(mem_candidates) - 1, self.n_previous).tolist()
             ]
-
         elif self.previous_pick_mode == 'random':
             mem_indexes = [
                 mem_candidates[i]
-                for i in sorted(np.random.choice(
+                for i in sorted(
+                    np.random.choice(
                         list(range(0, len(mem_candidates) - 1)),
                         size=self.n_previous - 1,
                         replace=False
@@ -264,9 +263,7 @@ class AgiBotWorld(Dataset):
 
         else:
             raise NotImplementedError(f"unsupported previous_pick_mode: {self.previous_pick_mode}")       
-
         frame_indexes = mem_indexes + video_end[self.video_temporal_stride - 1::self.video_temporal_stride]
-        
         action_indexes = mem_indexes + video_end
 
         return frame_indexes, action_indexes
