@@ -1,4 +1,3 @@
-
 import sys
 import os
 import io
@@ -15,18 +14,13 @@ import pandas as pd
 
 import torch
 from torch.utils.data.dataset import Dataset
-from einops import rearrange
-import glob
 from moviepy.editor import VideoFileClip
 import torchvision.transforms as transforms
 from tqdm import tqdm
 import torch.nn.functional as F
-import cv2
 from PIL import Image
 
-# from data.utils.domain_table import DomainTable
 from data.utils.statistics import StatisticInfo
-# from data.utils.get_actions import parse_h5
 
 from utils import zero_rank_print
 from data.utils.utils import intrinsic_transform, gen_crop_config, intrin_crop_transform

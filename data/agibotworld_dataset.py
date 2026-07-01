@@ -164,7 +164,6 @@ class AgiBotWorld(Dataset):
         assert(self.chunk * self.video_temporal_stride == self.action_chunk)
 
         self.sample_n_frames = sample_n_frames
-        
         self.sample_size = sample_size
 
         if preprocess == 'center_crop_resize':
@@ -280,24 +279,20 @@ class AgiBotWorld(Dataset):
         2. obatin End Effector Action / Delta Actoin / Relative Action:
            action (t, 14): {xyz, rpy,  gripper} * 2
         """
-        
         action, delta_action = parse_h5(h5_file, slices=slices, delta_act_sidx=0, action_space=self.action_space)
-
         act_meanv, act_stdv = self.get_action_bias_std(domain_name)
-        state = torch.FloatTensor(action[self.n_previous -1: self.n_previous])
+        state = torch.FloatTensor(action[self.n_previous - 1: self.n_previous])
         state = (state - act_meanv) / act_stdv
 
         if self.action_type == "absolute":
             action = torch.FloatTensor(action)
             action = (action - act_meanv) / act_stdv
             return action, state
-
         elif self.action_type == "delta":
             delta_act_meanv, delta_act_stdv = self.get_action_bias_std(domain_name + "_delta")
             delta_action = torch.FloatTensor(delta_action)
             delta_action = (delta_action - delta_act_meanv) / delta_act_stdv
             return delta_action, state
-
         elif self.action_type == "relative":
             act_meanv, act_stdv = self.get_action_bias_std(domain_name)
             action = torch.FloatTensor(action)
@@ -310,7 +305,6 @@ class AgiBotWorld(Dataset):
 
         else:
             raise NotImplementedError
-
 
     def seek_mp4(self, video_root, cam_name_list, slices):
         """
@@ -464,7 +458,7 @@ class AgiBotWorld(Dataset):
         vid_indexes, indexes = self.get_frame_indexes(total_frames, )
 
         action, state = self.get_action(h5_file, indexes, domain_name)
-        
+
         intrinsics, c2ws = self.get_intrin_and_extrin(self.valid_cam, caminfo_root, vid_indexes)
 
         ### c, n_view, total_frames, h, w
