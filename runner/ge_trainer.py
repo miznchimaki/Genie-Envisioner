@@ -680,7 +680,6 @@ class Trainer:
                     self.optimizer.step()
                     self.lr_scheduler.step()
                     self.optimizer.zero_grad()
-                
 
                 loss = accelerator.reduce(loss.detach(), reduction='mean')
                 if self.args.train_mode == 'all' or self.args.train_mode == 'action_only' or self.args.train_mode == 'action_full':
@@ -819,7 +818,7 @@ class Trainer:
             n_view=v,
             return_action=self.args.return_action,
             n_prev=self.args.data['train']['n_previous'],
-            chunk=(self.args.data['train']['chunk']-1) // self.TEMPORAL_DOWN_RATIO + 1,
+            chunk=(self.args.data['train']['chunk'] - 1) // self.TEMPORAL_DOWN_RATIO + 1,
             return_video=self.args.return_video,
             noise_seed=42,
             action_chunk=self.args.data['train']['action_chunk'],

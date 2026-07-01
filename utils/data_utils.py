@@ -153,7 +153,6 @@ def decode_latents(vae, latents, decode_timestep=0.0, decode_noise_scale=None, d
     return video.clamp(-1, 1)
 
 
-
 def prepare_latents(
     vae,
     image_or_video: torch.Tensor,
@@ -215,9 +214,11 @@ def post_latent_preparation(
     return {"latents": latents, "num_frames": num_frames, "height": height, "width": width}
 
 
-
 def _normalize_latents(
-    latents: torch.Tensor, latents_mean: torch.Tensor, latents_std: torch.Tensor, scaling_factor: float = 1.0,
+    latents: torch.Tensor,
+    latents_mean: torch.Tensor,
+    latents_std: torch.Tensor,
+    scaling_factor: float = 1.0,
     reverse=False,
 ) -> torch.Tensor:
     # Normalize latents across the channel dimension [B, C, F, H, W]
@@ -231,8 +232,13 @@ def _normalize_latents(
 
 
 def unpack_latents(
-        latents: torch.Tensor, num_frames: int, height: int, width: int, patch_size: int = 1, patch_size_t: int = 1
-    ) -> torch.Tensor:
+    latents: torch.Tensor,
+    num_frames: int,
+    height: int,
+    width: int,
+    patch_size: int = 1,
+    patch_size_t: int = 1
+) -> torch.Tensor:
     # Packed latents of shape [B, S, D] (S is the effective video sequence length, D is the effective feature dimensions)
     # are unpacked and reshaped into a video tensor of shape [B, C, F, H, W]. This is the inverse operation of
     # what happens in the `_pack_latents` method.
@@ -242,7 +248,11 @@ def unpack_latents(
     return latents
 
 
-def _pack_latents(latents: torch.Tensor, patch_size: int = 1, patch_size_t: int = 1) -> torch.Tensor:
+def _pack_latents(
+    latents: torch.Tensor,
+    patch_size: int = 1,
+    patch_size_t: int = 1
+) -> torch.Tensor:
     # Unpacked latents of shape are [B, C, F, H, W] are patched into tokens of shape [B, C, F // p_t, p_t, H // p, p, W // p, p].
     # The patch dimensions are then permuted and collapsed into the channel dimension of shape:
     # [B, F // p_t * H // p * W // p, C * p_t * p * p] (an ndim=3 tensor).
