@@ -520,11 +520,11 @@ class Trainer:
                         video = apply_color_jitter_to_video(video)
 
                     mem_size = self.args.data['train']['n_previous']
-                    mem = video[:,:,:mem_size]
-                    future_video = video[:,:,mem_size:]
+                    mem = video[:, :, : mem_size]
+                    future_video = video[:, :, mem_size:]
 
                     if self.args.return_action:
-                        future_video = future_video[:, :, :1].repeat(1, 1, self.args.data['train']['chunk'], 1, 1)
+                        future_video = future_video[:, :, : 1].repeat(1, 1, self.args.data['train']['chunk'], 1, 1)
 
                     # get the shape params
                     _, _, raw_frames, raw_height, raw_width = future_video.shape
@@ -777,7 +777,6 @@ class Trainer:
         gt_actions=None,
         to_log=True
     ):
-
         os.makedirs(model_save_dir,exist_ok=True)
 
         pipe = self.pipeline_class(

@@ -1,15 +1,10 @@
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 import random
 from PIL import Image
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
 from diffusers.utils.torch_utils import randn_tensor
 from einops import rearrange
-
-import torchvision
 import torchvision.transforms as transforms
 
 
@@ -95,14 +90,16 @@ def get_text_conditions(
 
 
 @torch.no_grad()
-def get_latents(vae,
-                mem: torch.Tensor,
-                video: torch.Tensor,
-                patch_size: int = 1,
-                patch_size_t: int = 1,
-                device: Optional[torch.device] = None,
-                dtype: Optional[torch.dtype] = None,
-                generator: Optional[torch.Generator] = None):
+def get_latents(
+    vae,
+    mem: torch.Tensor,
+    video: torch.Tensor,
+    patch_size: int = 1,
+    patch_size_t: int = 1,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+    generator: Optional[torch.Generator] = None
+):
     """
     mem: (b v) c m h w [-1,1]
     video: (b v) c f h w [-1,1]
@@ -110,7 +107,6 @@ def get_latents(vae,
         mem_latents: (b v m) (1 h_latent w_latent) c
         video_latents: (b v) (f_latent h_latent w_latent) c
     """
-
     device = device or vae.device
 
     video_latents = vae.encode(video).latent_dist.sample(generator=generator)
@@ -384,4 +380,3 @@ def get_ray_maps(intrinsic, extrinsic, h, w, n_view, t, device, dtype):
     rays = rearrange(torch.cat((rays_o, rays_d), dim=-1), "(b v t) h w c -> b c v t h w", v=n_view, t=t)
     rays = rays.to(device, dtype=dtype).contiguous()
     return rays
-
