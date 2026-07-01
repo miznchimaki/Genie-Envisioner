@@ -272,7 +272,7 @@ def _pack_latents(
         patch_size,
     )
     latents = latents.permute(0, 2, 4, 6, 1, 3, 5, 7).flatten(4, 7).flatten(1, 3)
-    return latents
+    return latents  # (bsz, t_seq_len * h_seq_len * w_seq_len, num_ch)
 
 
 def gen_noise_from_condition_frame_latent(
