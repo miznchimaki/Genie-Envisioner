@@ -87,7 +87,6 @@ def parse_h5(h5_file, slices=None, delta_act_sidx=1, action_space="eef", n_arm_j
     read and parse .h5 file, and obtain the absolute actions and the action differences
     """
     with h5py.File(h5_file, "r") as fid:
-        
         all_abs_gripper = np.array(fid[f"state/effector/position"], dtype=np.float32)
 
         if action_space == "eef":
