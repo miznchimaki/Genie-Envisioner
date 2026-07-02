@@ -204,6 +204,7 @@ class AgiBotWorld(Dataset):
             self.step_recap_map = None
 
         self.use_unified_prompt = use_unified_prompt
+        self.unified_prompt = unified_prompt
 
         ### validation only
         self.fix_epiidx = fix_epiidx
@@ -317,9 +318,9 @@ class AgiBotWorld(Dataset):
             fps = video_reader.fps
             video = []
             for idx in slices:
-                video.append(video_reader.get_frame(float(idx)/fps))
+                video.append(video_reader.get_frame(float(idx) / fps))
             video = torch.from_numpy(np.stack(video)).permute(3, 0, 1, 2).contiguous()
-            video = video.float()/255.
+            video = video.float() / 255.
             video_reader.close()
             video_list.append(video)
         return video_list
@@ -402,16 +403,11 @@ class AgiBotWorld(Dataset):
 
     def get_long_recaption(self, step_captions, task_caption):
         newcap = []
-        # find = []
         for step_caption in step_captions:
-            # if step_caption in find:
-            #     continue
-            # else:
-            #     find.append(step_caption)
             if self.step_recap_map is not None:
-                recap_list = self.step_recap_map.get(step_caption,[])
+                recap_list = self.step_recap_map.get(step_caption, [])
                 recap_list.append(step_caption)
-                step_caption = np.random.choice(recap_list,1)
+                step_caption = np.random.choice(recap_list, 1)
                 newcap.append(str(step_caption[0]))
             else:
                 newcap.append(step_caption)
@@ -419,17 +415,18 @@ class AgiBotWorld(Dataset):
         newcap = ", ".join(newcap)
         newcap = newcap.replace(" the "," ")
         if self.task_recap_map is not None:
-            task_recap_list = self.task_recap_map.get(task_caption,[])
+            task_recap_list = self.task_recap_map.get(task_caption, [])
             task_recap_list.append(task_caption)
-            task_newcap = np.random.choice(task_recap_list,1)
+            task_newcap = np.random.choice(task_recap_list, 1)
             task_newcap = str(task_newcap[0])
             fullcap = task_newcap + ": " + newcap
         else:
             task_newcap = task_caption
             fullcap = task_caption + ": " + newcap
-        cap_type = random.randint(0,2)
+        cap_type = random.randint(0, 2)
         allcap = [fullcap, task_newcap, newcap]
         recap = allcap[cap_type]
+
         return recap
 
     def get_caption(self, label_info, task_caption):
@@ -450,21 +447,16 @@ class AgiBotWorld(Dataset):
         task_name = self.dataset[idx][6]
 
         total_frames = self.get_total_timesteps(caminfo_root, self.valid_cam[0])
-
         caption = self.get_caption(label_info, task_name)
-
         sample_size, specific_transforms_resize, specific_transforms_norm = self.get_transform()
-
         vid_indexes, indexes = self.get_frame_indexes(total_frames, )
-
         action, state = self.get_action(h5_file, indexes, domain_name)
-
         intrinsics, c2ws = self.get_intrin_and_extrin(self.valid_cam, caminfo_root, vid_indexes)
 
         ### c, n_view, total_frames, h, w
         if self.ignore_seek:
             ### used in the action-training stage to avoid seek future frames
-            vid_indexes = vid_indexes[:self.n_previous + 1]
+            vid_indexes = vid_indexes[: self.n_previous + 1]
             end_frames = 1
 
         videos = self.seek_mp4(video_root, self.valid_cam, vid_indexes)
