@@ -44,7 +44,6 @@ def intrinsic_transform(intrinsic, original_res, size, transform_mode):
         fy_new = fy * scale_height
         cx_new = cx * scale_width
         cy_new = cy * scale_height
-
     elif transform_mode == 'center_crop_resize':
         if original_height <= original_width:
             scale_ratio = min(size) / original_height
@@ -62,15 +61,14 @@ def intrinsic_transform(intrinsic, original_res, size, transform_mode):
         crop_width = size[1]
         cx_new = cx_new * (crop_width / resize_width)
         cy_new = cy_new * (crop_height / resize_height)
-    
     else:
         raise NotImplementedError('No such transformation mode for image!')
     
-    return torch.tensor([[fx_new, 0, cx_new],
-                         [0, fy_new, cy_new],
-                         [0, 0, 1]])
-
-
+    return torch.tensor(
+        [[fx_new, 0, cx_new],
+        [0, fy_new, cy_new],
+        [0, 0, 1]]
+    )
 
 
 def intrinsic_transform_batch(intrinsic, original_res, size, transform_mode):
@@ -89,7 +87,6 @@ def intrinsic_transform_batch(intrinsic, original_res, size, transform_mode):
         fy_new = fy * scale_height
         cx_new = cx * scale_width
         cy_new = cy * scale_height
-
     elif transform_mode == 'center_crop_resize':
         if original_height <= original_width:
             scale_ratio = min(size) / original_height
@@ -107,11 +104,8 @@ def intrinsic_transform_batch(intrinsic, original_res, size, transform_mode):
         crop_width = size[1]
         cx_new = cx_new * (crop_width / resize_width)
         cy_new = cy_new * (crop_height / resize_height)
-    
     else:
         raise NotImplementedError('No such transformation mode for image!')
-    
-
     fx_expanded = fx_new
     fy_expanded = fy_new
     cx_expanded = cx_new
@@ -129,10 +123,10 @@ def intrinsic_transform_batch(intrinsic, original_res, size, transform_mode):
 
 def gen_crop_config(tensor):
     h, w = tensor.shape[-2], tensor.shape[-1]
-    h_start = random.randint(0,h//8)
-    w_start = random.randint(0,w//8)
-    h_crop = random.randint(7*h//8,h-h_start)
-    w_crop = random.randint(7*w//8,w-w_start)
+    h_start = random.randint(0, h // 8)
+    w_start = random.randint(0,w // 8)
+    h_crop = random.randint(7 * h // 8, h - h_start)
+    w_crop = random.randint(7 * w // 8, w - w_start)
     return h_start, w_start, h_crop, w_crop
 
 
@@ -146,6 +140,7 @@ def intrin_crop_transform(intrinsic, h_start, w_start):
     cx_new = cx - w_start
     cy_new = cy - h_start
     return torch.tensor([[fx,0,cx_new],[0,fy,cy_new],[0,0,1]])
+
 
 # def get_transformation_matrix_from_quat(xyz_quat):
 #     ### xyz_quat: tensor, (b, 7)

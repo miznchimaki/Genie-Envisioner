@@ -105,7 +105,6 @@ class AgiBotWorld(Dataset):
         self.action_space = action_space
 
         self.random_crop = random_crop
-        
         if not isinstance(valid_cam, (list, tuple)):
             valid_cam = [valid_cam, ]
         self.valid_cam = valid_cam
@@ -168,7 +167,8 @@ class AgiBotWorld(Dataset):
 
         if preprocess == 'center_crop_resize':
             self.pixel_transforms_resize = transforms.Compose([
-                transforms.Resize(min(sample_size)),  # the size of shape (1,) means the smaller edge will be resized to it and the img will keep the h-w ratio.
+                # the size of shape (1,) means the smaller edge will be resized to it and the img will keep the h-w ratio.
+                transforms.Resize(min(sample_size)),
                 transforms.CenterCrop(sample_size),
             ])
         elif preprocess == 'resize':
@@ -178,7 +178,11 @@ class AgiBotWorld(Dataset):
         else:
             raise NotImplementedError
         self.pixel_transforms_norm = transforms.Compose([
-            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True),
+            transforms.Normalize(
+                mean=[0.5, 0.5, 0.5],
+                std=[0.5, 0.5, 0.5],
+                inplace=True
+            ),
         ])
         self.preprocess = preprocess
 
@@ -221,6 +225,7 @@ class AgiBotWorld(Dataset):
         with open(os.path.join(data_root, "parameters", "camera", cam_name+"_extrinsic_params_aligned.json"), "r") as f:
             info = json.load(f)
         total_frames = len(info)
+
         return total_frames
 
     def get_frame_indexes(self, total_frames):
@@ -303,7 +308,6 @@ class AgiBotWorld(Dataset):
             rel_action[:, 6] = action[:, 6]
             rel_action[:, 13] = action[:, 13]
             return rel_action, state
-
         else:
             raise NotImplementedError
 
@@ -314,19 +318,18 @@ class AgiBotWorld(Dataset):
         """
         video_list = []
         for cam_name in cam_name_list:
-            video_reader = VideoFileClip(os.path.join(video_root, "videos", cam_name+'_color.mp4'))
+            video_reader = VideoFileClip(os.path.join(video_root, "videos", cam_name + '_color.mp4'))
             fps = video_reader.fps
             video = []
             for idx in slices:
-                video.append(video_reader.get_frame(float(idx) / fps))
-            video = torch.from_numpy(np.stack(video)).permute(3, 0, 1, 2).contiguous()
+                video.append(video_reader.get_frame(float(idx) / fps))  # frame shape: (H, W, C); frame dtype: np.unit8
+            video = torch.from_numpy(np.stack(video)).permute(3, 0, 1, 2).contiguous()  # (C, T, H, W)
             video = video.float() / 255.
             video_reader.close()
             video_list.append(video)
-        return video_list
+        return video_list  # list with length V, Tensor shape: (C, T, H, W)
 
-
-    def get_intrin_and_extrin(self, cam_name_list, data_root, slices,):
+    def get_intrin_and_extrin(self, cam_name_list, data_root, slices):
         """
         get the intrinsic (Vx3x3), c2ws (VxTx4x4) tensors
         """
@@ -358,20 +361,19 @@ class AgiBotWorld(Dataset):
         c2ws_list = torch.stack(c2ws_list, dim=0)
         return intrinsic_list, c2ws_list
 
-
     def transform_video(self, videos, specific_transforms_resize, intrinsics, sample_size):
         """
         crop (optional) and resize the videos, and modify the intrinsic accordingly
         """
-        v = len(videos)
+        v = len(videos)  # num_views
         new_videos = []
         new_intrinsics = []
         for iv in range(v):
-            video = videos[iv]
+            video = videos[iv]  # (C, T, H, W)
             c, t, h, w = video.shape
             if self.random_crop:
                 h_start, w_start, h_crop, w_crop = gen_crop_config(video)
-                video = video[:,:,h_start:h_start+h_crop,w_start:w_start+w_crop]
+                video = video[:, :, h_start: h_start + h_crop, w_start: w_start + w_crop]
                 intrinsic = intrin_crop_transform(intrinsics[iv], h_start, w_start)
                 h, w = h_crop, w_crop
             else:
@@ -380,16 +382,15 @@ class AgiBotWorld(Dataset):
             video = specific_transforms_resize(video)
             new_videos.append(video)
             new_intrinsics.append(intrinsic)
-        new_videos = torch.stack(new_videos, dim=1)
+        new_videos = torch.stack(new_videos, dim=1)  # shape: (C, V, T, H, W)
         new_intrinsics = torch.stack(new_intrinsics, dim=0)
-        return new_videos, new_intrinsics
-
+        return new_videos, new_intrinsics  # (C, V, T, H, W); 
 
     def normalize_video(self, video, specific_transforms_norm):
         """
-        input video should have shape (c,v,t,h,w)
+        input video should have shape (c, v, t, h, w)
         """
-        c,v,t,h,w = video.shape
+        c, v, t, h, w = video.shape
         video = specific_transforms_norm(
             video.permute(1, 2, 0, 3, 4).reshape(-1, c, h, w)
         ).reshape(v, t, c, h, w).permute(2, 0, 1, 3, 4)
@@ -435,6 +436,7 @@ class AgiBotWorld(Dataset):
         else:
             step_captions = [_["action_text"] for _ in label_info["action_config"]]
             caption = self.get_long_recaption(step_captions, task_caption)
+
         return caption
 
     def get_batch(self, idx, debug=False):
@@ -463,7 +465,7 @@ class AgiBotWorld(Dataset):
         videos, intrinsics = self.transform_video(
             videos, specific_transforms_resize, intrinsics, sample_size
         )
-        videos = self.normalize_video(videos, specific_transforms_norm)
+        videos = self.normalize_video(videos, specific_transforms_norm)  # (C, V, T, H, W)
 
         return videos, video_root, intrinsics, c2ws, action, state, caption
 
@@ -483,7 +485,6 @@ class AgiBotWorld(Dataset):
                     traceback.print_exc()
                     ### 
                     idx = random.randint(0, self.length-1)
-
         sample = dict(
             video=video,
             actions=actions,
