@@ -331,34 +331,43 @@ class AgiBotWorld(Dataset):
 
     def get_intrin_and_extrin(self, cam_name_list, data_root, slices):
         """
-        get the intrinsic (Vx3x3), c2ws (VxTx4x4) tensors
+        get the intrinsic (V x 3 x 3), c2ws (V x T x 4 x 4) tensors
         """
         intrinsic_list = []
         c2ws_list = []
         for cam_name in cam_name_list:
-            with open(os.path.join(data_root, "parameters", "camera", cam_name+"_intrinsic_params.json"), "r") as f:
+            intrin_p = os.path.join(data_root, "parameters", "camera", cam_name + "_intrinsic_params.json")
+            with open(intrin_p, "r") as f:
                 info = json.load(f)["intrinsic"]
             intrinsic = torch.eye(3, dtype=torch.float)
-            intrinsic[0,0] = info["fx"]
-            intrinsic[1,1] = info["fy"]
-            intrinsic[0,2] = info["ppx"]
-            intrinsic[1,2] = info["ppy"]
-            intrinsic_list.append(intrinsic)
+            intrinsic[0, 0] = info["fx"]
+            intrinsic[1, 1] = info["fy"]
+            intrinsic[0, 2] = info["ppx"]
+            intrinsic[1, 2] = info["ppy"]
+            intrinsic_list.append(intrinsic)  # list with length `V`; Tensor shape: (3, 3)
 
-            with open(os.path.join(data_root, "parameters", "camera", cam_name+"_extrinsic_params_aligned.json"), "r") as f:
+            aligned_extrin_p = os.path.join(
+                data_root,
+                "parameters",
+                "camera",
+                cam_name + "_extrinsic_params_aligned.json"
+            )
+            with open(aligned_extrin_p, "r") as f:
                 info = json.load(f)
             c2ws = []
             for _i in slices:
                 _i_info = info[_i]
                 c2w = torch.eye(4, dtype=torch.float)
-                c2w[:3, :3] = torch.FloatTensor(_i_info["extrinsic"]["rotation_matrix"])
-                c2w[:3, -1] = torch.FloatTensor(_i_info["extrinsic"]["translation_vector"])
+                c2w[: 3, : 3] = torch.FloatTensor(_i_info["extrinsic"]["rotation_matrix"])
+                c2w[: 3, -1] = torch.FloatTensor(_i_info["extrinsic"]["translation_vector"])
                 w2c = torch.linalg.inv(c2w)
                 c2ws.append(c2w)
-            c2ws = torch.stack(c2ws, dim=0)
+            c2ws = torch.stack(c2ws, dim=0)  # (T, 4, 4)
             c2ws_list.append(c2ws)
-        intrinsic_list = torch.stack(intrinsic_list, dim=0)
-        c2ws_list = torch.stack(c2ws_list, dim=0)
+        intrinsic_list = torch.stack(intrinsic_list, dim=0)  # (V, 3, 3)
+        c2ws_list = torch.stack(c2ws_list, dim=0)  # (V, T, 4, 4)
+
+        # (V, 3, 3); (V, T, 4, 4)
         return intrinsic_list, c2ws_list
 
     def transform_video(self, videos, specific_transforms_resize, intrinsics, sample_size):

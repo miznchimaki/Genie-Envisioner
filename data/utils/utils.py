@@ -19,18 +19,18 @@ def gen_batch_ray_parellel(intrinsic,c2w,W,H):
     j = j.t()
     i = i.unsqueeze(0).repeat(batch_size, 1, 1)
     j = j.unsqueeze(0).repeat(batch_size, 1, 1)
-    dirs = torch.stack([(i-cx)/fx, (j-cy)/fy, torch.ones_like(i)], -1)
+    dirs = torch.stack([(i - cx) / fx, (j - cy) / fy, torch.ones_like(i)], -1)
     rays_d = torch.sum(
-        dirs[..., np.newaxis, :] * c2w[:,np.newaxis,np.newaxis, :3,:3],
+        dirs[..., np.newaxis, :] * c2w[:, np.newaxis, np.newaxis, : 3, : 3],
         -1
     )  # dot product, equals to: [c2w.dot(dir) for dir in dirs]
-    rays_o = c2w[:, :3, -1].unsqueeze(1).unsqueeze(2).repeat(1, H, W, 1)
+    rays_o = c2w[:, : 3, -1].unsqueeze(1).unsqueeze(2).repeat(1, H, W, 1)
     viewdir = rays_d / torch.norm(rays_d, dim=-1, keepdim=True)
     return rays_d, rays_o, viewdir
 
 
 def intrinsic_transform(intrinsic, original_res, size, transform_mode):
-    fx, fy, cx, cy = intrinsic[0,0], intrinsic[1,1], intrinsic[0,2], intrinsic[1,2]
+    fx, fy, cx, cy = intrinsic[0, 0], intrinsic[1, 1], intrinsic[0, 2], intrinsic[1, 2]
     original_height = original_res[0]
     original_width = original_res[1]
     if transform_mode == 'resize':
