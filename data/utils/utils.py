@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 import random
-# from pytorch3d.transforms.rotation_conversions import quaternion_to_matrix
 
 
 def gen_batch_ray_parellel(intrinsic,c2w,W,H):
@@ -73,7 +72,7 @@ def intrinsic_transform(intrinsic, original_res, size, transform_mode):
 
 def intrinsic_transform_batch(intrinsic, original_res, size, transform_mode):
     b = intrinsic.shape[0]
-    fx, fy, cx, cy = intrinsic[:,0,0], intrinsic[:,1,1], intrinsic[:,0,2], intrinsic[:,1,2]
+    fx, fy, cx, cy = intrinsic[:, 0, 0], intrinsic[:, 1, 1], intrinsic[:, 0, 2], intrinsic[:, 1, 2]
     original_height = original_res[0]
     original_width = original_res[1]
     if transform_mode == 'resize':

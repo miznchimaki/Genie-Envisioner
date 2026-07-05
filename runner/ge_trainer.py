@@ -2,18 +2,14 @@ import os, random, math
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import List
 
 from datetime import datetime, timedelta
 import argparse
 import json
-import importlib
-# ----------------------------------------------------
-import matplotlib.pyplot as plt
-import matplotlib
 
-from yaml import load, dump, Loader, Dumper
-import numpy as np
+# ----------------------------------------------------
+from yaml import load, Loader
 from tqdm import tqdm
 import torch
 from torch import distributed as dist
@@ -43,7 +39,14 @@ from accelerate.utils import (
 )
 
 # ----------------------------------------------------
-from utils.model_utils import load_condition_models, load_latent_models, load_vae_models, load_diffusion_model, count_model_parameters, unwrap_model
+from utils.model_utils import (
+    load_condition_models,
+    load_latent_models,
+    load_vae_models,
+    load_diffusion_model,
+    count_model_parameters,
+    unwrap_model
+)
 from utils.model_utils import forward_pass
 from utils.optimizer_utils import get_optimizer
 from utils.memory_utils import get_memory_statistics, free_memory
@@ -53,7 +56,13 @@ from torch.utils.tensorboard import SummaryWriter
 from utils import init_logging, import_custom_class, save_video
 
 # ----------------------------------------------------
-from utils.data_utils import get_latents, get_text_conditions, gen_noise_from_condition_frame_latent, randn_tensor, apply_color_jitter_to_video
+from utils.data_utils import (
+    get_latents,
+    get_text_conditions,
+    gen_noise_from_condition_frame_latent,
+    randn_tensor,
+    apply_color_jitter_to_video
+)
 
 # ----------------------------------------------------
 from utils.extra_utils import act_metric
@@ -499,7 +508,6 @@ class Trainer:
 
         for epoch in range(first_epoch, self.state.train_epochs):
             logger.debug(f"Starting epoch ({epoch + 1}/{self.state.train_epochs})")
-
             self.diffusion_model.train()
 
             running_loss = 0.0
@@ -507,7 +515,6 @@ class Trainer:
                 logger.debug(f"Starting step {step + 1}")
                 logs = {}
                 with accelerator.accumulate([ self.diffusion_model ]):
-                    
                     video = batch['video']
 
                     # shape: {b, c, v, t, h, w}; ranging from -1 to 1
@@ -541,8 +548,19 @@ class Trainer:
                         self.vae, mem, future_video
                     )
 
-                    mem_latents = rearrange(mem_latents, '(b v m) (h w) c -> (b v) c m h w', b=batch_size, m=mem_size, h=latent_height)
-                    future_video_latents = rearrange(future_video_latents, '(b v) (f h w) c -> (b v) c f h w',b=batch_size,h=latent_height,w=latent_width)
+                    mem_latents = rearrange(
+                        mem_latents,
+                        '(b v m) (h w) c -> (b v) c m h w',
+                        b=batch_size,
+                        m=mem_size,
+                        h=latent_height
+                    )
+                    future_video_latents = rearrange(
+                        future_video_latents,
+                        '(b v) (f h w) c -> (b v) c f h w',
+                        b=batch_size,
+                        h=latent_height,
+                        w=latent_width)
                     latents = torch.cat((mem_latents, future_video_latents), dim=2)
 
                     video_attention_mask = None

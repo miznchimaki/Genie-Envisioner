@@ -101,8 +101,8 @@ def get_latents(
     generator: Optional[torch.Generator] = None
 ):
     """
-    mem: (b v) c m h w [-1,1]
-    video: (b v) c f h w [-1,1]
+    mem:   (b v) c m h w [-1, 1]
+    video: (b v) c f h w [-1, 1]
     Returns:
         mem_latents: (b v m) (1 h_latent w_latent) c
         video_latents: (b v) (f_latent h_latent w_latent) c

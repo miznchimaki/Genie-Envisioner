@@ -9,18 +9,13 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 import json
 import random
-import math
 import numpy as np
 
 import torch
 from torch.utils.data.dataset import Dataset
-from einops import rearrange
-import glob
 from moviepy.editor import VideoFileClip
 import torchvision.transforms as transforms
 from tqdm import tqdm
-import torch.nn.functional as F
-import cv2
 
 from data.utils.domain_table import DomainTable
 from data.utils.statistics import StatisticInfo
@@ -235,7 +230,6 @@ class AgiBotWorld(Dataset):
         2. take frames from {end - action_chunk} to {end} as the prediction frames
         3. uniformly/randomly select memory frames from {end - self.sample_n_frames} to {end - action_chunk}
         """
-
         if self.fix_sidx is not None and self.fix_mem_idx is not None:
             action_indexes = list(range(self.fix_sidx, self.fix_sidx + self.action_chunk))
             frame_indexes = action_indexes[:: self.video_temporal_stride]
@@ -265,7 +259,6 @@ class AgiBotWorld(Dataset):
                     ).tolist()
                 )
             ] + [mem_candidates[-1]]
-
         else:
             raise NotImplementedError(f"unsupported previous_pick_mode: {self.previous_pick_mode}")       
         frame_indexes = mem_indexes + video_end[self.video_temporal_stride - 1::self.video_temporal_stride]
