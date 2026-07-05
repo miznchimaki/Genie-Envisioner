@@ -391,9 +391,9 @@ class AgiBotWorld(Dataset):
             video = specific_transforms_resize(video)
             new_videos.append(video)
             new_intrinsics.append(intrinsic)
-        new_videos = torch.stack(new_videos, dim=1)  # shape: (C, V, T, H, W)
-        new_intrinsics = torch.stack(new_intrinsics, dim=0)
-        return new_videos, new_intrinsics  # (C, V, T, H, W); 
+        new_videos = torch.stack(new_videos, dim=1)  # (C, V, T, H, W)
+        new_intrinsics = torch.stack(new_intrinsics, dim=0)  # (V, 3, 3)
+        return new_videos, new_intrinsics  # (C, V, T, H, W); (V, 3, 3)
 
     def normalize_video(self, video, specific_transforms_norm):
         """
