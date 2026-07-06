@@ -567,11 +567,11 @@ class Trainer:
                     latents = rearrange(latents, 'bv c f h w -> bv (f h w) c')
 
                     captions = batch['caption']
-                    text_conds = get_text_conditions(self.tokenizer,self.text_encoder,captions)
+                    text_conds = get_text_conditions(self.tokenizer, self.text_encoder, captions)
                     prompt_embeds = text_conds['prompt_embeds']
                     prompt_attention_mask = text_conds['prompt_attention_mask']
-                    prompt_embeds = self.uncond_prompt_embeds.repeat(batch_size,1,1)*dropout_mask_prompt + \
-                                    prompt_embeds*~dropout_mask_prompt
+                    prompt_embeds = self.uncond_prompt_embeds.repeat(batch_size, 1, 1) * dropout_mask_prompt + \
+                        prompt_embeds * ~dropout_mask_prompt
 
                     # These weighting schemes use a uniform timestep sampling and instead post-weight the loss
                     action_weights = compute_density_for_timestep_sampling(
@@ -641,7 +641,6 @@ class Trainer:
                     ss = sigmas.reshape(-1, 1, 1).repeat(1, 1, latents.size(-1))
                     if self.args.return_action and self.args.noisy_video:
                         ss = torch.full_like(ss, 1.0)
-
                     noisy_latents = (1.0 - ss) * latents + ss * noise
 
                     # These weighting schemes use a uniform timestep sampling and instead post-weight the loss, shape bv,1,c
@@ -687,9 +686,7 @@ class Trainer:
                     else:
                         loss_action = 0.
                     action_loss_scale = getattr(self.args, "action_loss_scale", 1.0)
-
                     loss = loss_video + action_loss_scale * loss_action
-
                     assert torch.isnan(loss) == False, "NaN loss detected"
                     accelerator.backward(loss)
                     if accelerator.sync_gradients and accelerator.distributed_type != DistributedType.DEEPSPEED:
@@ -706,7 +703,6 @@ class Trainer:
                     loss_video = accelerator.reduce(loss_video.detach(), reduction='mean')
 
                 running_loss += loss.item()
-
                 # Checks if the accelerator has performed an optimization step behind the scenes
                 if accelerator.sync_gradients:
                     progress_bar.update(1)
@@ -735,7 +731,6 @@ class Trainer:
                         model_save_dir = os.path.join(self.save_folder,f'Validation_step_{global_step}')
                         self.validate(accelerator, model_save_dir, global_step, n_view=n_view, n_chunk=1)
 
-                
                 if global_step % self.args.steps_to_save == 0:
                     accelerator.wait_for_everyone()
                     if accelerator.is_main_process:
@@ -747,11 +742,9 @@ class Trainer:
                             if self.args.mixed_precision == "bf16"
                             else torch.float32
                         )
-
                         model_save_dir = os.path.join(self.save_folder,f'step_{global_step}')
                         model_to_save.save_pretrained(model_save_dir, safe_serialization=True)
                         del  model_to_save
-                        
             memory_statistics = get_memory_statistics()
             logger.info(f"Memory after epoch {epoch + 1}: {json.dumps(memory_statistics, indent=4)}")
 
@@ -769,7 +762,6 @@ class Trainer:
                 if self.args.mixed_precision == "bf16"
                 else torch.float32
             )
-
             model_save_dir = os.path.join(self.save_folder,f'step_{global_step}')
             self.diffusion_model.save_pretrained(model_save_dir, safe_serialization=True)
 
