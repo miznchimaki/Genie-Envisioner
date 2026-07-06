@@ -606,9 +606,10 @@ class Trainer:
                         else:
                             act_state = None
 
-                        actions = batch['actions'][:, -self.args.data['train']['action_chunk']:].to(accelerator.device, dtype=weight_dtype).contiguous()   # shape b,t,c
+                        actions = batch['actions'][
+                            :, -self.args.data['train']['action_chunk']:
+                        ].to(accelerator.device, dtype=weight_dtype).contiguous()  # shape b,t,c
                         action_dim = actions.shape[-1]
-
                         noise_actions = randn_tensor(actions.shape, device=accelerator.device, dtype=weight_dtype)
 
                         # here we get action_timesteps, shape (b,) originally, target shape (b, l) 
@@ -808,9 +809,11 @@ class Trainer:
         num_denois_steps = self.args.num_inference_step
 
         if self.args.return_action and getattr(self.args, "add_state", False):
-            history_action_state = batch['state'][:batch_size]
+            history_action_state = batch['state'][: batch_size]
             if history_action_state.shape[1] > 1:
-                history_action_state = history_action_state[:, self.args.data['train']['n_previous']-1:self.args.data['train']['n_previous'], :]
+                history_action_state = history_action_state[
+                    :, self.args.data['train']['n_previous'] - 1: self.args.data['train']['n_previous'], :
+                ]
             history_action_state = history_action_state.contiguous()
         else:
             history_action_state = None
