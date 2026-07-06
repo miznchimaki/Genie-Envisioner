@@ -598,9 +598,7 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                 action_hidden_states = self.action_proj_extra(action_hidden_states)
             if history_action_state is not None:
                 action_hidden_states = action_hidden_states[:, 1:]
-
             action_output = self.action_proj_out(action_hidden_states)
-
             final_output['action'] = action_output
 
         if not return_dict:
