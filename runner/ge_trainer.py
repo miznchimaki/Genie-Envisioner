@@ -601,7 +601,7 @@ class Trainer:
                             # NOTE add states from the batch:
                             act_state = batch['state']
                             if act_state.shape[1] != 1:
-                                act_state = act_state[:, mem_size-1:mem_size]
+                                act_state = act_state[:, mem_size - 1: mem_size]
                             act_state = act_state.to(accelerator.device, dtype=weight_dtype).contiguous()
                         else:
                             act_state = None

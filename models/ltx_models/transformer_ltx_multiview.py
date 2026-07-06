@@ -24,7 +24,7 @@ from einops import rearrange
 
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.loaders import FromOriginalModelMixin, PeftAdapterMixin
-from diffusers.utils import USE_PEFT_BACKEND, is_torch_version, logging, scale_lora_layers, unscale_lora_layers
+from diffusers.utils import is_torch_version, logging
 from diffusers.utils.torch_utils import maybe_allow_in_graph
 from diffusers.models.attention import FeedForward
 from diffusers.models.embeddings import PixArtAlphaTextProjection
@@ -34,12 +34,10 @@ from diffusers.models.normalization import AdaLayerNormSingle, RMSNorm
 import torch.utils.checkpoint
 
 from models.ltx_models.ltx_attention_processor import Attention
-
-
 from models.action_patches.patches import preprocessing_action_states, add_action_expert
 
-logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
+logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
 class LTXVideoAttentionProcessor2_0:
@@ -67,7 +65,6 @@ class LTXVideoAttentionProcessor2_0:
         batch_size, sequence_length, _ = (
             hidden_states.shape if encoder_hidden_states is None else encoder_hidden_states.shape
         )
-        
 
         if cross_view_attn:
             assert n_view is not None
@@ -76,11 +73,9 @@ class LTXVideoAttentionProcessor2_0:
                 batch_size = batch_size // n_view   # n_view=3 for video self-attn, and attn batch is in-batch // 3
                 attention_mask = attention_mask.repeat(batch_size, n_view, n_view)
                 sequence_length = attention_mask.shape[-1]
-
         elif image_rotary_emb is not None and attention_mask is not None:  # for self-attn w/o cross-view-attn
             attention_mask = attention_mask.repeat(batch_size, 1, 1)
             sequence_length = attention_mask.shape[-1]
-        
 
         if attention_mask is not None:
             attention_mask = attn.prepare_attention_mask(attention_mask, sequence_length, batch_size)
@@ -88,7 +83,6 @@ class LTXVideoAttentionProcessor2_0:
 
         if encoder_hidden_states is None:
             encoder_hidden_states = hidden_states
-        
 
         query = attn.to_q(hidden_states)
         key = attn.to_k(encoder_hidden_states)
@@ -107,13 +101,10 @@ class LTXVideoAttentionProcessor2_0:
 
         else:   # for cross attn, extend the sequence length
             query = rearrange(query, '(b v) l c -> b (v l) c', v=n_view)
-        
 
         query = query.unflatten(2, (attn.heads, -1)).transpose(1, 2)
         key = key.unflatten(2, (attn.heads, -1)).transpose(1, 2)
         value = value.unflatten(2, (attn.heads, -1)).transpose(1, 2)
-        
-        
 
         hidden_states = F.scaled_dot_product_attention(
             query, key, value, attn_mask=attention_mask, dropout_p=0.0, is_causal=False
@@ -157,7 +148,6 @@ class LTXVideoRotaryPosEmbed(nn.Module):
         num_frames=None, height=None, width=None,
         **kwargs,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-
         batch_size = hidden_states.shape[0]
 
         # Always compute rope in fp32
@@ -206,6 +196,7 @@ class LTXVideoRotaryPosEmbed(nn.Module):
             sin_freqs = torch.cat([sin_padding, sin_freqs], dim=-1)
 
         return cos_freqs, sin_freqs
+
 
 @maybe_allow_in_graph
 class LTXVideoTransformerBlock(nn.Module):
@@ -267,9 +258,7 @@ class LTXVideoTransformerBlock(nn.Module):
             qk_norm=qk_norm,
             processor=LTXVideoAttentionProcessor2_0(),
         )
-
         self.ff = FeedForward(dim, activation_fn=activation_fn)
-
         self.scale_shift_table = nn.Parameter(torch.randn(6, dim) / dim**0.5)
 
     def forward(
@@ -290,8 +279,6 @@ class LTXVideoTransformerBlock(nn.Module):
         ada_values = self.scale_shift_table[None, None] + temb.reshape(batch_size, temb.size(1), num_ada_params, -1)
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = ada_values.unbind(dim=2)
         norm_hidden_states = norm_hidden_states * (1 + scale_msa) + shift_msa
-
-
         attn_hidden_states = self.attn1(
             hidden_states=norm_hidden_states,
             encoder_hidden_states=None,
@@ -316,9 +303,6 @@ class LTXVideoTransformerBlock(nn.Module):
         hidden_states = hidden_states + ff_output * gate_mlp
 
         return hidden_states
-
-
-
 
 
 @maybe_allow_in_graph
@@ -388,9 +372,9 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
         if self.use_view_embed:
             self.view_embed = nn.Parameter(torch.randn(max_view, inner_dim))
             self.view_ada = nn.Sequential(
-                                            nn.SiLU(),
-                                            nn.Linear(inner_dim, 6 * inner_dim, bias=True)
-                                        )
+                nn.SiLU(),
+                nn.Linear(inner_dim, 6 * inner_dim, bias=True)
+            )
 
         self.caption_projection = PixArtAlphaTextProjection(in_features=caption_channels, hidden_size=inner_dim)
 
@@ -426,8 +410,6 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
         self.proj_out = nn.Linear(inner_dim, out_channels)
 
         self.gradient_checkpointing = False
-
-
         self.action_expert = action_expert
         if self.action_expert:
             add_action_expert(
@@ -445,11 +427,9 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                 **kwargs
             )
 
-
     def _set_gradient_checkpointing(self, module, value=False):
         if hasattr(module, "gradient_checkpointing"):
             module.gradient_checkpointing = value
-
 
     def forward(
         self,
@@ -473,16 +453,12 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
         width: int = None,
         **kwargs,
     ) -> torch.Tensor:
-
         if return_video or store_buffer:
-
             if store_buffer:
                 video_states_buffer = []
-
             image_rotary_emb = self.rope(
                 hidden_states, rope_interpolation_scale, num_frames, height, width
             )
-
             # convert encoder_attention_mask to a bias the same way we do for attention_mask
             if encoder_attention_mask is not None and encoder_attention_mask.ndim == 2:
                 encoder_attention_mask = (1 - encoder_attention_mask.to(hidden_states.dtype)) * -10000.0
@@ -521,11 +497,11 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                 assert store_buffer or return_video
             if history_action_state is not None:
                 action_states = torch.cat((history_action_state, action_states), dim=1)
-                action_timestep = torch.cat((torch.zeros_like(action_timestep[:,0:1]), action_timestep), dim=1)
-            action_temb, action_embedded_timestep, action_rotary_emb, action_hidden_states = preprocessing_action_states(self, action_states, action_timestep)
+                action_timestep = torch.cat((torch.zeros_like(action_timestep[:, 0: 1]), action_timestep), dim=1)
+            action_temb, action_embedded_timestep, action_rotary_emb, action_hidden_states = \
+                preprocessing_action_states(self, action_states, action_timestep)
 
         for block_idx, block in enumerate(self.transformer_blocks):
-            
             if torch.is_grad_enabled() and self.gradient_checkpointing:
 
                 def create_custom_forward(module, return_dict=None):
@@ -538,7 +514,6 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                     return custom_forward
 
                 ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
-                
                 if return_video or store_buffer:
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(block),
@@ -557,7 +532,6 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                         video_states_buffer.append(hidden_states.clone())
                 else:
                     hidden_states = video_states_buffer[block_idx]
-                
 
                 if return_action:
                     ### final_hidden_states:  video features, b (v t h w) c
@@ -604,22 +578,15 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                         rotary_emb=action_rotary_emb,
                     )
 
-                    
-
-
         final_output = {}
-
         if store_buffer:
             final_output['video_states_buffer'] = video_states_buffer
-
         if return_video:
             scale_shift_values = self.scale_shift_table[None, None] + embedded_timestep[:, :, None]
             shift, scale = scale_shift_values[:, :, 0], scale_shift_values[:, :, 1]
-
             hidden_states = self.norm_out(hidden_states)
             hidden_states = hidden_states * (1 + scale) + shift
             output = self.proj_out(hidden_states)
-
             final_output['video'] = output
 
         if return_action:
@@ -656,4 +623,3 @@ def apply_rotary_emb(x, freqs):
     x_rotated = torch.stack([-x_imag, x_real], dim=-1).flatten(2)
     out = (x.float() * cos + x_rotated.float() * sin).to(x.dtype)
     return out
-

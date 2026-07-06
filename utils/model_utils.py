@@ -1,19 +1,19 @@
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 import json
 import os
-import sys
 
 import torch
 import torch.nn as nn
 from accelerate import Accelerator
 from diffusers.utils.torch_utils import is_compiled_module
-from safetensors.torch import save_model, load_file, save_file
+from safetensors.torch import load_file
 
 
 def unwrap_model(accelerator: Accelerator, model):
     model = accelerator.unwrap_model(model)
     model = model._orig_mod if is_compiled_module(model) else model
     return model
+
 
 def count_model_parameters(model: nn.Module):
     total_params = sum(p.numel() for p in model.parameters())
@@ -35,6 +35,7 @@ def load_index_file(index_filename):
         state_dict.update(load_file(checkpoint_file))
     return state_dict
 
+
 def _find_mismatched_keys(
     state_dict,
     model_state_dict,
@@ -55,11 +56,11 @@ def _find_mismatched_keys(
 
     return mismatched_keys
 
+
 def load_checkpoints(model, pretrained_ckpt, strict=False, ignore_mismatched_sizes=True):
     """
     Load safetensors model state dict file.
     """
-
     # In this case we have many shards to load
     if os.path.isdir(pretrained_ckpt):
         state_dict = load_index_file(os.path.join(pretrained_ckpt, "diffusion_pytorch_model.safetensors.index.json"))
@@ -87,7 +88,6 @@ def load_checkpoints(model, pretrained_ckpt, strict=False, ignore_mismatched_siz
     print(">>> Loaded weights from pretrained checkpoint: %s"%pretrained_ckpt)
 
 
-
 def load_condition_models(
     tokenizer_class,
     textenc_class,
@@ -104,7 +104,6 @@ def load_condition_models(
         revision=revision,
         cache_dir=cache_dir
     )
-
     if load_weights:
         text_encoder = textenc_class.from_pretrained(
             model_id,
@@ -177,7 +176,7 @@ def forward_pass(
 ) -> torch.Tensor:
     latent_frame_rate = frame_rate / temporal_compression_ratio
     rope_interpolation_scale = [1 / latent_frame_rate, spatial_compression_ratio, spatial_compression_ratio]
-    
+
     denoised_latents = model(
         hidden_states=noisy_latents,
         encoder_hidden_states=prompt_embeds,
