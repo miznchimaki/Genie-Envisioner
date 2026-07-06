@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 
-def gen_batch_ray_parellel(intrinsic,c2w,W,H):
+def gen_batch_ray_parallel(intrinsic, c2w, W, H):
     batch_size = intrinsic.shape[0]
     
     fx, fy, cx, cy = intrinsic[:, 0, 0].unsqueeze(1).unsqueeze(2), \
@@ -116,7 +116,7 @@ def intrinsic_transform_batch(intrinsic, original_res, size, transform_mode):
     intrinsic_matrices[:, 0, 2] = cx_expanded
     intrinsic_matrices[:, 1, 2] = cy_expanded
     intrinsic_matrices[:, 2, 2] = 1
-    
+
     return intrinsic_matrices
 
 
@@ -138,7 +138,7 @@ def intrin_crop_transform(intrinsic, h_start, w_start):
     fx, fy, cx, cy = intrinsic[0][0], intrinsic[1][1], intrinsic[0][2], intrinsic[1][2]
     cx_new = cx - w_start
     cy_new = cy - h_start
-    return torch.tensor([[fx,0,cx_new],[0,fy,cy_new],[0,0,1]])
+    return torch.tensor([[fx, 0, cx_new], [0, fy, cy_new], [0, 0, 1]])
 
 
 # def get_transformation_matrix_from_quat(xyz_quat):
