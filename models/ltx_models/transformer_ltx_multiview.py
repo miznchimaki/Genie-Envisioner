@@ -564,13 +564,11 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                         video_states_buffer.append(hidden_states.clone())
                 else:
                     hidden_states = video_states_buffer[block_idx]
-                
                 if return_action:
                     ### final_hidden_states:  video features, b (v t h w) c
                     ### action_hidden_states: random actions, b v c
                     ### 
                     final_hidden_states = rearrange(hidden_states, '(b v) l c -> b (v l) c', v=n_view)
-                    
                     action_hidden_states = self.action_blocks[block_idx](
                         hidden_states=action_hidden_states,
                         encoder_hidden_states=final_hidden_states,
