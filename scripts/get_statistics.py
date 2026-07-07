@@ -9,7 +9,6 @@ import argparse
 def load_data(data_path, key="action"):
     data = pd.read_parquet(data_path)
     data = np.stack([data[key][i] for i in range(data[key].shape[0])])
-    # data = np.stack([data[key][i][0] for i in range(data[key].shape[0])])
     return data 
 
 
@@ -25,8 +24,16 @@ def cal_statistic(data, _filter=True):
     return means, stds, q99, q01
 
 
-def get_statistics(data_root, data_name, data_type, save_path, action_key="action", state_key="observation.state", nrnd=50000, _filter=True,):
-    
+def get_statistics(
+    data_root,
+    data_name,
+    data_type,
+    save_path,
+    action_key="action",
+    state_key="observation.state",
+    nrnd=50000,
+    _filter=True
+):
     assert(data_type in ["joint", "eef"])
 
     data_path_list = os.listdir(data_root)
@@ -57,34 +64,6 @@ def get_statistics(data_root, data_name, data_type, save_path, action_key="actio
     assert(len(state_list.shape)==2)
     state_means, state_stds, state_q99, state_q01 = cal_statistic(state_list, _filter=_filter)
 
-    ### example:
-    ### data_name=agibotworld, data_type="joint"/"eef"
-    ### 
-    ### StatisticInfo = {
-    ###     "agibotworld_joint": {
-    ###         "mean": [
-    ###             ...
-    ###         ]
-    ###         "std": [
-    ###             ...
-    ###         ]
-    ###     "agibotworld_delta_joint": {
-    ###         "mean": [
-    ###             ...
-    ###         ]
-    ###         "std": [
-    ###             ...
-    ###         ]
-    ### }
-    ###     "agibotworld_state_joint": {
-    ###         "mean": [
-    ###             ...
-    ###         ]
-    ###         "std": [
-    ###             ...
-    ###         ]
-    ### }
-
     statistics_info = dict({
         data_name+"_"+data_type:dict({
             "mean": means.tolist(),
@@ -106,25 +85,13 @@ def get_statistics(data_root, data_name, data_type, save_path, action_key="actio
         }),
     })
 
-    # if os.path.exists(save_path):
-    #     with open(save_path, "r") as f:
-    #         exist_info = json.load(f)
-    # else:
-    #     exist_info = dict()
-    # for k in statistics_info.keys():
-    #     assert k not in exist_info
-
     exist_info = dict()
     exist_info.update(statistics_info)
-    
     with open(save_path, "w") as f:
         json.dump(exist_info, f, indent=4)
 
 
-
-
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_root', default="PATH/TO/YOUR/DATASET")
     parser.add_argument('--data_name', default="YOUR_CUSTOM_DATASET")
@@ -136,5 +103,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     get_statistics(
-        args.data_root, args.data_name, args.data_type, args.save_path, action_key=args.action_key, state_key=args.state_key
+        args.data_root,
+        args.data_name,
+        args.data_type,
+        args.save_path,
+        action_key=args.action_key,
+        state_key=args.state_key
     )
