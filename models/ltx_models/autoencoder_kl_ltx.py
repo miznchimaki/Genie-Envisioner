@@ -631,7 +631,7 @@ class LTXVideoEncoder3d(nn.Module):
 
         self.patch_size = patch_size
         self.patch_size_t = patch_size_t
-        self.in_channels = in_channels * patch_size**2 * patch_size_t
+        self.in_channels = in_channels * patch_size ** 2 * patch_size_t
         self.spatio_temporal_scaling = spatio_temporal_scaling
 
         output_channel = block_out_channels[0]

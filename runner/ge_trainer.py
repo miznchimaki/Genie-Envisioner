@@ -278,7 +278,6 @@ class Trainer:
         logger.info(f">>>>>>>>>>>>>Total Validatoin Eps: {len(self.val_dataset)}<<<<<<<<<<<<<<<<<<\n")
 
     def prepare_models(self):
-
         logger.info("Initializing models")
         device = self.state.accelerator.device
         dtype = self.state.weight_dtype
