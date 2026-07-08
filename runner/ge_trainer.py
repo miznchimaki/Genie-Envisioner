@@ -629,7 +629,11 @@ class Trainer:
 
                     # shape:  bv, l, c and bv, l
                     noise, conditioning_mask, cond_indicator = gen_noise_from_condition_frame_latent(
-                        mem_latents, latent_frames, latent_height, latent_width, noise_to_condition_frames=self.args.noise_to_first_frame
+                        mem_latents,
+                        latent_frames,
+                        latent_height,
+                        latent_width,
+                        noise_to_condition_frames=self.args.noise_to_first_frame
                     )  # set initial frames noise to 0
                     if self.args.pixel_wise_timestep:
                         # shape: bv, thw

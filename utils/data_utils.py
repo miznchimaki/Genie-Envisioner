@@ -8,7 +8,6 @@ from einops import rearrange
 import torchvision.transforms as transforms
 
 
-
 def _encode_prompt(
     tokenizer,
     text_encoder,
@@ -361,8 +360,10 @@ def prepare_ray_map(intrinsic, c2w, H, W):
         rays:      b, H, W, 3 and b, H, W, 3
     """
     batch_size = intrinsic.shape[0]
-    fx, fy, cx, cy = intrinsic[:,0,0].unsqueeze(1).unsqueeze(2), intrinsic[:,1,1].unsqueeze(1).unsqueeze(2), intrinsic[:,0,2].unsqueeze(1).unsqueeze(2), intrinsic[:,1,2].unsqueeze(1).unsqueeze(2)
-    i, j = torch.meshgrid(torch.linspace(0.5, W-0.5, W, device=c2w.device), torch.linspace(0.5, H-0.5, H, device=c2w.device))  # pytorch's meshgrid has indexing='ij'
+    fx, fy, cx, cy = intrinsic[:, 0, 0].unsqueeze(1).unsqueeze(2), intrinsic[:, 1, 1].unsqueeze(1).unsqueeze(2), \
+        intrinsic[:, 0, 2].unsqueeze(1).unsqueeze(2), intrinsic[:, 1, 2].unsqueeze(1).unsqueeze(2)
+    i, j = torch.meshgrid(torch.linspace(0.5, W - 0.5, W, device=c2w.device), \
+        torch.linspace(0.5, H-0.5, H, device=c2w.device))  # pytorch's meshgrid has indexing='ij'
     i = i.t()
     j = j.t()
     i = i.unsqueeze(0).repeat(batch_size,1,1)
