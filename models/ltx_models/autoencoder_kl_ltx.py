@@ -146,13 +146,12 @@ class LTXVideoResnetBlock3d(nn.Module):
 
         self.scale_shift_table = None
         if timestep_conditioning:
-            self.scale_shift_table = nn.Parameter(torch.randn(4, in_channels) / in_channels**0.5)
+            self.scale_shift_table = nn.Parameter(torch.randn(4, in_channels) / in_channels ** 0.5)
 
     def forward(
         self, inputs: torch.Tensor, temb: Optional[torch.Tensor] = None, generator: Optional[torch.Generator] = None
     ) -> torch.Tensor:
         hidden_states = inputs
-
         hidden_states = self.norm1(hidden_states.movedim(1, -1)).movedim(-1, 1)
 
         if self.scale_shift_table is not None:
@@ -1162,10 +1161,16 @@ class AutoencoderKLLTXVideo(ModelMixin, ConfigMixin, FromOriginalModelMixin):
         if self.use_slicing and z.shape[0] > 1:
             if temb is not None:
                 decoded_slices = [
-                    self._decode(z_slice, t_slice).sample for z_slice, t_slice in (z.chunk(num_splits), temb.chunk(num_splits)) if z_slice.numel() != 0 and t_slice.numel() != 0
+                    self._decode(z_slice, t_slice).sample
+                      for z_slice, t_slice in (
+                          z.chunk(num_splits), temb.chunk(num_splits)
+                      ) if z_slice.numel() != 0 and t_slice.numel() != 0
                 ]
             else:
-                decoded_slices = [self._decode(z_slice).sample for z_slice in z.chunk(num_splits) if z_slice.numel() != 0]
+                decoded_slices = [
+                    self._decode(z_slice).sample
+                    for z_slice in z.chunk(num_splits) if z_slice.numel() != 0
+                ]
             decoded = torch.cat(decoded_slices)
         else:
             decoded = self._decode(z, temb).sample
