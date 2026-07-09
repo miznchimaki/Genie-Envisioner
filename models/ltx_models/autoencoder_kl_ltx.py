@@ -649,7 +649,6 @@ class LTXVideoEncoder3d(nn.Module):
         for i in range(num_block_out_channels):
             input_channel = output_channel
             output_channel = block_out_channels[i + 1] if i + 1 < num_block_out_channels else block_out_channels[i]
-
             down_block = LTXVideoDownBlock3D(
                 in_channels=input_channel,
                 out_channels=output_channel,
@@ -658,7 +657,6 @@ class LTXVideoEncoder3d(nn.Module):
                 spatio_temporal_scale=spatio_temporal_scaling[i],
                 is_causal=is_causal,
             )
-
             self.down_blocks.append(down_block)
 
         # mid block
@@ -693,7 +691,7 @@ class LTXVideoEncoder3d(nn.Module):
             batch_size, num_channels, post_patch_num_frames, p_t, post_patch_height, p, post_patch_width, p
         )
         ###    b, c, n_p_t, p_t, n_p_h, p, n_p_w, w
-        ### -> b, (c*p_t*p*p), n_p_t, n_p_h, n_p_w
+        ### -> b, (c * p_t * p * p), n_p_t, n_p_h, n_p_w
         hidden_states = hidden_states.permute(0, 1, 3, 7, 5, 2, 4, 6).flatten(1, 4)
         hidden_states = self.conv_in(hidden_states)
 
@@ -712,7 +710,6 @@ class LTXVideoEncoder3d(nn.Module):
         else:
             for down_block in self.down_blocks:
                 hidden_states = down_block(hidden_states)
-
             hidden_states = self.mid_block(hidden_states)
 
         hidden_states = self.norm_out(hidden_states.movedim(1, -1)).movedim(-1, 1)
