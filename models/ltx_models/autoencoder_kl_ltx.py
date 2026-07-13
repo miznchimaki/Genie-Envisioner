@@ -771,7 +771,7 @@ class LTXVideoDecoder3d(nn.Module):
 
         self.patch_size = patch_size
         self.patch_size_t = patch_size_t
-        self.out_channels = out_channels * patch_size**2
+        self.out_channels = out_channels * patch_size ** 2
 
         block_out_channels = tuple(reversed(block_out_channels))
         spatio_temporal_scaling = tuple(reversed(spatio_temporal_scaling))
@@ -828,7 +828,7 @@ class LTXVideoDecoder3d(nn.Module):
         self.scale_shift_table = None
         if timestep_conditioning:
             self.time_embedder = PixArtAlphaCombinedTimestepSizeEmbeddings(output_channel * 2, 0)
-            self.scale_shift_table = nn.Parameter(torch.randn(2, output_channel) / output_channel**0.5)
+            self.scale_shift_table = nn.Parameter(torch.randn(2, output_channel) / output_channel ** 0.5)
 
         self.gradient_checkpointing = False
 
@@ -977,8 +977,8 @@ class AutoencoderKLLTXVideo(ModelMixin, ConfigMixin, FromOriginalModelMixin):
             upsample_factor=upsample_factor,
         )
 
-        latents_mean = torch.zeros((latent_channels,), requires_grad=False)
-        latents_std = torch.ones((latent_channels,), requires_grad=False)
+        latents_mean = torch.zeros((latent_channels, ), requires_grad=False)
+        latents_std = torch.ones((latent_channels, ), requires_grad=False)
         self.register_buffer("latents_mean", latents_mean, persistent=True)
         self.register_buffer("latents_std", latents_std, persistent=True)
 

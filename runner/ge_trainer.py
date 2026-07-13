@@ -559,7 +559,8 @@ class Trainer:
                         '(b v) (f h w) c -> (b v) c f h w',
                         b=batch_size,
                         h=latent_height,
-                        w=latent_width)
+                        w=latent_width
+                    )
                     latents = torch.cat((mem_latents, future_video_latents), dim=2)
 
                     video_attention_mask = None

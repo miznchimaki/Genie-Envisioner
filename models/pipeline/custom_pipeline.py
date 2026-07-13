@@ -13,21 +13,16 @@
 # limitations under the License.
 
 import inspect
-import os
-import sys
-from importlib import import_module
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass
-import time
 import numpy as np
 import torch
 
-from diffusers.callbacks import MultiPipelineCallbacks, PipelineCallback
 from diffusers.image_processor import PipelineImageInput
 from diffusers.loaders import FromSingleFileMixin
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 from diffusers.schedulers import FlowMatchEulerDiscreteScheduler
-from diffusers.utils import is_torch_xla_available, logging, replace_example_docstring
+from diffusers.utils import is_torch_xla_available, logging
 from diffusers.utils.torch_utils import randn_tensor
 from diffusers.utils import BaseOutput
 
@@ -950,7 +945,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                         xm.mark_step()
 
             if return_video:
-                
                 ### clean_frames: (b v) c t h w, -1~1
                 clean_frames = self.decode_to_frames(
                     pred_latents,
@@ -967,7 +961,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                     video_list = torch.cat((video_list, clean_frames), dim=2)
 
                 if i_chunk < n_chunk-1:
-                    
                     ### reset scheduler
                     self.scheduler._step_index = None
 
@@ -978,7 +971,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                     init_latents = retrieve_latents(self.vae.encode(new_mems), generator, sample_mode=sample_mode)
                     init_latents = self._normalize_latents(init_latents, self.vae.latents_mean, self.vae.latents_std)
                     init_latents = rearrange(init_latents, "(b t) c f h w -> b c (t f) h w", t=mem_size)
-        
 
         # Offload all models
         self.maybe_free_model_hooks()
