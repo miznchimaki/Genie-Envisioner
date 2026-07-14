@@ -291,7 +291,9 @@ class Trainer:
         )
         cond_models = load_condition_models(
             tokenizer_class, textenc_class,
-            self.args.pretrained_model_name_or_path if not hasattr(self.args, "tokenizer_pretrained_model_name_or_path") else self.args.tokenizer_pretrained_model_name_or_path,
+            self.args.pretrained_model_name_or_path
+            if not hasattr(self.args, "tokenizer_pretrained_model_name_or_path")
+            else self.args.tokenizer_pretrained_model_name_or_path,
             load_weights=True
         )
         self.tokenizer, text_encoder = cond_models["tokenizer"], cond_models["text_encoder"]
