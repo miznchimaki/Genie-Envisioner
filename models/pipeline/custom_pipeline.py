@@ -25,9 +25,8 @@ from diffusers.schedulers import FlowMatchEulerDiscreteScheduler
 from diffusers.utils import is_torch_xla_available, logging
 from diffusers.utils.torch_utils import randn_tensor
 from diffusers.utils import BaseOutput
-
-
 from einops import rearrange
+
 from utils.data_utils import gen_noise_from_condition_frame_latent
 
 if is_torch_xla_available():

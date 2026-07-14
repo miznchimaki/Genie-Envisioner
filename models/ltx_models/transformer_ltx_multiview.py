@@ -91,14 +91,14 @@ class LTXVideoAttentionProcessor2_0:
         query = attn.norm_q(query)
         key = attn.norm_k(key)
 
-        if image_rotary_emb is not None:   # for self attn, extend the sequence length according to the cross_view_attn param
+        # for self attn, extend the sequence length according to the cross_view_attn param
+        if image_rotary_emb is not None:
             query = apply_rotary_emb(query, image_rotary_emb)
             key = apply_rotary_emb(key, image_rotary_emb)
             if cross_view_attn:
                 query = rearrange(query, '(b v) l c -> b (v l) c', v=n_view)
                 key = rearrange(key, '(b v) l c -> b (v l) c', v=n_view)
                 value = rearrange(value, '(b v) l c -> b (v l) c', v=n_view)
-
         else:   # for cross attn, extend the sequence length
             query = rearrange(query, '(b v) l c -> b (v l) c', v=n_view)
 
@@ -167,9 +167,9 @@ class LTXVideoRotaryPosEmbed(nn.Module):
         """
 
         if rope_interpolation_scale is not None:
-            grid[:, 0:1] = grid[:, 0:1] * rope_interpolation_scale[0] * self.patch_size_t / self.base_num_frames
-            grid[:, 1:2] = grid[:, 1:2] * rope_interpolation_scale[1] * self.patch_size / self.base_height
-            grid[:, 2:3] = grid[:, 2:3] * rope_interpolation_scale[2] * self.patch_size / self.base_width
+            grid[:, 0: 1] = grid[:, 0: 1] * rope_interpolation_scale[0] * self.patch_size_t / self.base_num_frames
+            grid[:, 1: 2] = grid[:, 1: 2] * rope_interpolation_scale[1] * self.patch_size / self.base_height
+            grid[:, 2: 3] = grid[:, 2: 3] * rope_interpolation_scale[2] * self.patch_size / self.base_width
 
         grid = grid.flatten(2, 4).transpose(1, 2)
 
@@ -614,8 +614,9 @@ def apply_rotary_emb(x, freqs):
         cos = cos.repeat(batch_size, 1, 1)
     if sin.shape[0] == 1 and batch_size > 1:
         sin = sin.repeat(batch_size, 1, 1)
-    
+
     x_real, x_imag = x.unflatten(2, (-1, 2)).unbind(-1)  # [B, S, H, D // 2]
     x_rotated = torch.stack([-x_imag, x_real], dim=-1).flatten(2)
     out = (x.float() * cos + x_rotated.float() * sin).to(x.dtype)
+
     return out

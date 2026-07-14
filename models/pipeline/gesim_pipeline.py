@@ -18,8 +18,6 @@
 import inspect
 from typing import Callable, Dict, List, Optional, Union
 
-import numpy as np
-import os.path as osp
 import torch
 from einops import rearrange
 
@@ -30,11 +28,8 @@ from diffusers.utils.torch_utils import randn_tensor
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 
 from models.pipeline.gesim_cosmos2_pipeline_utils.pipeline_output import CosmosPipelineOutput
-    
 from models.pipeline.custom_pipeline import retrieve_timesteps, retrieve_latents
-
 from models.pipeline.gesim_cosmos2_pipeline_utils.video_processor import VideoProcessor
-
 from utils.geometry_utils import resize_traj_and_ray
 
 
