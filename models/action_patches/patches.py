@@ -1,10 +1,7 @@
 import math
-from typing import Any, Dict, Optional, Tuple
-
-
+from typing import Optional, Tuple
 import torch
 import torch.nn as nn
-
 from diffusers.models.attention import FeedForward
 from diffusers.models.normalization import AdaLayerNormSingle, RMSNorm
 from diffusers.utils.torch_utils import maybe_allow_in_graph
@@ -28,12 +25,9 @@ class ActionRotaryPosEmbed(nn.Module):
         hidden_states: torch.Tensor,
         seq_length: int,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-
         # Always compute rope in fp32
         grid = torch.arange(seq_length, dtype=torch.float32, device=hidden_states.device).unsqueeze(0)
-
         grid = grid / self.base_seq_length
-
         grid = grid.unsqueeze(-1)
 
         start = 1.0
@@ -58,8 +52,6 @@ class ActionRotaryPosEmbed(nn.Module):
             sin_freqs = torch.cat([sin_padding, sin_freqs], dim=-1)
 
         return cos_freqs, sin_freqs
-
-
 
 
 @maybe_allow_in_graph
@@ -110,9 +102,7 @@ class ActionTransformerBlock(nn.Module):
         self.attn2 = attention_class(
             **(attention_args[1]),
         )
-
         self.ff = FeedForward(dim, activation_fn=activation_fn)
-
         self.scale_shift_table = nn.Parameter(torch.randn(6, dim) / dim**0.5)
 
         self.num_latent_downsample_block = num_latent_downsample_block
@@ -122,7 +112,6 @@ class ActionTransformerBlock(nn.Module):
                 self.latent_downsample_block.append(
                     downsampling_block()
                 )
-
 
     def forward(
         self,
@@ -141,7 +130,6 @@ class ActionTransformerBlock(nn.Module):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = ada_values.unbind(dim=2)
         norm_hidden_states = norm_hidden_states * (1 + scale_msa) + shift_msa
 
-        
         attn_hidden_states = self.attn1(
             hidden_states=norm_hidden_states,
             encoder_hidden_states=None,
@@ -150,7 +138,6 @@ class ActionTransformerBlock(nn.Module):
         )
         hidden_states = hidden_states + attn_hidden_states * gate_msa
 
-        
         attn_hidden_states = self.attn2(
             hidden_states,
             encoder_hidden_states=encoder_hidden_states,
@@ -159,16 +146,12 @@ class ActionTransformerBlock(nn.Module):
             n_view=1,
         )
         hidden_states = hidden_states + attn_hidden_states
-
         norm_hidden_states = self.norm2(hidden_states) * (1 + scale_mlp) + shift_mlp
-        
 
         ff_output = self.ff(norm_hidden_states)
         hidden_states = hidden_states + ff_output * gate_mlp
-        
 
         return hidden_states
-
 
 
 def add_action_expert(
@@ -192,7 +175,6 @@ def add_action_expert(
     attention_processor = None,
     **kwargs,
 ):
-
     if action_out_channels is None:
         action_out_channels = action_in_channels
 
@@ -272,16 +254,21 @@ def preprocessing_action_states(
     action_states: torch.Tensor = None,
     action_timestep: torch.LongTensor = None,
 ):
-
     assert self.action_expert == True
     assert action_states is not None and action_timestep is not None
 
     batch_size = action_states.shape[0]
-
     action_seq_length = action_states.shape[1]
 
     if getattr(self, "learnable_action_state") and self.learnable_action_state:
-        action_states = self.action_state.repeat(batch_size, action_seq_length, 1).to(dtype=action_states.dtype, device=action_states.device)
+        action_states = self.action_state.repeat(
+            batch_size,
+            action_seq_length,
+            1
+        ).to(
+            dtype=action_states.dtype,
+            device=action_states.device
+        )
 
     action_rotary_emb = self.action_rope(action_states, action_seq_length)
     action_hidden_states = self.action_proj_in(action_states)
@@ -291,7 +278,6 @@ def preprocessing_action_states(
         batch_size=batch_size,
         hidden_dtype=action_hidden_states.dtype,
     )
-
     action_temb = action_temb.view(batch_size, -1, action_temb.size(-1))
     action_embedded_timestep = action_embedded_timestep.view(batch_size, -1, action_embedded_timestep.size(-1))
     

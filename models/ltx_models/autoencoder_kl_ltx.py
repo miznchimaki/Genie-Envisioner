@@ -69,7 +69,7 @@ class LTXVideoCausalConv3d(nn.Module):
         time_kernel_size = self.kernel_size[0]
 
         if self.is_causal:
-            pad_left = hidden_states[:, :, :1, :, :].repeat((1, 1, time_kernel_size - 1, 1, 1))
+            pad_left = hidden_states[:, :, : 1, :, :].repeat((1, 1, time_kernel_size - 1, 1, 1))
             hidden_states = torch.concatenate([pad_left, hidden_states], dim=2)
         else:
             pad_left = hidden_states[:, :, : 1, :, :].repeat((1, 1, (time_kernel_size - 1) // 2, 1, 1))
