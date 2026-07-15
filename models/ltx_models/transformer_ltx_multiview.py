@@ -259,7 +259,7 @@ class LTXVideoTransformerBlock(nn.Module):
             processor=LTXVideoAttentionProcessor2_0(),
         )
         self.ff = FeedForward(dim, activation_fn=activation_fn)
-        self.scale_shift_table = nn.Parameter(torch.randn(6, dim) / dim**0.5)
+        self.scale_shift_table = nn.Parameter(torch.randn(6, dim) / dim ** 0.5)
 
     def forward(
         self,
@@ -481,7 +481,7 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
             embedded_timestep = embedded_timestep.view(batch_size, -1, embedded_timestep.size(-1))
 
             if self.use_view_embed:
-                embedded_view = self.view_embed[:n_view].unsqueeze(0).repeat(batch_size//n_view, 1, 1)
+                embedded_view = self.view_embed[: n_view].unsqueeze(0).repeat(batch_size//n_view, 1, 1)
                 embedded_view = rearrange(embedded_view, 'b v c -> (b v) c').unsqueeze(1)
                 vemb = self.view_ada(embedded_view)
                 temb = temb + vemb
