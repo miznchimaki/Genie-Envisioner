@@ -589,9 +589,9 @@ class Trainer:
                     action_timesteps = (action_sigmas * 1000.0).long()
 
                     if self.args.return_action and self.args.noisy_video:
-                        weights = torch.full_like(action_weights, 0.0).unsqueeze(1).repeat(1,n_view)
+                        weights = torch.full_like(action_weights, 0.0).unsqueeze(1).repeat(1, n_view)
                     else:
-                        weights = action_weights.unsqueeze(1).repeat(1,n_view)
+                        weights = action_weights.unsqueeze(1).repeat(1, n_view)
 
                     weights = rearrange(weights, 'b v -> (b v)')
                     indices = (weights * self.scheduler.config.num_train_timesteps).long()

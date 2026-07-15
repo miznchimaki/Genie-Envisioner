@@ -275,11 +275,13 @@ def _pack_latents(
 
 
 def gen_noise_from_condition_frame_latent(
-    condition_frame_latent, latent_num_frames,
-    latent_height=12, latent_width=16,
-    generator=None, noise_to_condition_frames=0.05
+    condition_frame_latent,
+    latent_num_frames,
+    latent_height=12,
+    latent_width=16,
+    generator=None,
+    noise_to_condition_frames=0.05
 ):
-
     """
     To train the model for memory-frames conditioning,
     we occasionally set the timestep of the tokens
@@ -289,9 +291,7 @@ def gen_noise_from_condition_frame_latent(
     this new information (when provided) as a conditioning signal
     
     condition_frame_latent: (b v) c m h w
-
     """
-
     mem_size = condition_frame_latent.shape[2]
     num_channels_latents = condition_frame_latent.shape[1] # 128
     batch_size = condition_frame_latent.size(0)   # bv
@@ -300,31 +300,33 @@ def gen_noise_from_condition_frame_latent(
     shape = (batch_size, num_channels_latents, latent_num_frames, latent_height, latent_width)
     mask_shape = (batch_size, 1, latent_num_frames, latent_height, latent_width)
 
-    init_latents = condition_frame_latent[:,:,:1].repeat(1, 1, latent_num_frames, 1, 1)
-    init_latents[:,:,:mem_size] = condition_frame_latent
+    init_latents = condition_frame_latent[:, :, : 1].repeat(1, 1, latent_num_frames, 1, 1)
+    init_latents[:, :, : mem_size] = condition_frame_latent
     conditioning_mask = torch.zeros(mask_shape, device=condition_frame_latent.device, dtype=condition_frame_latent.dtype)
-    conditioning_mask[:, :, :mem_size] = 1.0
+    conditioning_mask[:, :, : mem_size] = 1.0
 
     # similar to conditioning mask but useful to timesteps
-    cond_indicator = torch.zeros((1, 1, latent_num_frames, 1, 1), device=condition_frame_latent.device, dtype=condition_frame_latent.dtype)
-    cond_indicator[:, :, :mem_size] = 1.0
+    cond_indicator = torch.zeros(
+        (1, 1, latent_num_frames, 1, 1),
+        device=condition_frame_latent.device,
+        dtype=condition_frame_latent.dtype
+    )
+    cond_indicator[:, :, : mem_size] = 1.0
 
     rand_noise_ff = random.random() * noise_to_condition_frames
 
     first_frame_mask = conditioning_mask.clone()
-    first_frame_mask[:, :, :mem_size] = 1.0 - rand_noise_ff
+    first_frame_mask[:, :, : mem_size] = 1.0 - rand_noise_ff
 
     noise = randn_tensor(shape, generator=generator, device=condition_frame_latent.device, dtype=condition_frame_latent.dtype)
     latents = init_latents * first_frame_mask + noise * (1 - first_frame_mask)
 
     conditioning_mask = _pack_latents(conditioning_mask).squeeze(-1)
     cond_indicator = _pack_latents(cond_indicator).squeeze(-1)
-
     latents = _pack_latents(latents)
 
     # pack_latents: b c f h w -> b (f h w) c
     # unpack_latents: b (f h w) c -> b c f h w
-
     return latents, conditioning_mask, cond_indicator
 
 

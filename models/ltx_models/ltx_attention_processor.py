@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import inspect
-import math
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import torch
 import torch.nn.functional as F
@@ -21,7 +20,7 @@ from torch import nn
 
 from diffusers.utils import deprecate, is_torch_xla_available, logging
 from diffusers.utils.import_utils import is_torch_npu_available, is_torch_xla_version, is_xformers_available
-from diffusers.utils.torch_utils import is_torch_version, maybe_allow_in_graph
+from diffusers.utils.torch_utils import maybe_allow_in_graph
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name

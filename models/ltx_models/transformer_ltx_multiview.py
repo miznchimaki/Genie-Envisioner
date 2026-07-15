@@ -524,7 +524,7 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                         encoder_attention_mask,
                         n_view,
                         # TODO: we always set cross_view_attn=True in this case
-                        block_idx%3==0,
+                        block_idx % 3 == 0,
                         video_attention_mask,
                         **ckpt_kwargs,
                     )
@@ -557,7 +557,7 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                         encoder_attention_mask=encoder_attention_mask,
                         n_view=n_view,
                         # TODO: we always set cross_view_attn=True in this case
-                        cross_view_attn=block_idx%3==0,
+                        cross_view_attn=block_idx % 3 == 0,
                         self_attention_mask=video_attention_mask,
                     )
                     if store_buffer:
