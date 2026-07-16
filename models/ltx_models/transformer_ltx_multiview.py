@@ -265,7 +265,7 @@ class LTXVideoTransformerBlock(nn.Module):
         self,
         hidden_states: torch.Tensor,
         encoder_hidden_states: torch.Tensor,
-        temb: torch.Tensor,
+        temb: torch.Tensor,  # (B x V, L, 6 * inner_dim)
         image_rotary_emb: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         encoder_attention_mask: Optional[torch.Tensor] = None,
         n_view: int = None,
@@ -365,7 +365,7 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
         # TODO: replace it with our dim if needed
         self.proj_in = nn.Linear(in_channels, inner_dim)
 
-        self.scale_shift_table = nn.Parameter(torch.randn(2, inner_dim) / inner_dim**0.5)
+        self.scale_shift_table = nn.Parameter(torch.randn(2, inner_dim) / inner_dim ** 0.5)
         self.time_embed = AdaLayerNormSingle(inner_dim, use_additional_conditions=False)
 
         self.use_view_embed = use_view_embed
@@ -476,12 +476,12 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
                 hidden_dtype=hidden_states.dtype,
             )
 
-            temb = temb.view(batch_size, -1, temb.size(-1))
+            temb = temb.view(batch_size, -1, temb.size(-1))  # (B x V, L, 6 * inner_dim)
 
-            embedded_timestep = embedded_timestep.view(batch_size, -1, embedded_timestep.size(-1))
+            embedded_timestep = embedded_timestep.view(batch_size, -1, embedded_timestep.size(-1))  # (B x V, L, inner_dim)
 
             if self.use_view_embed:
-                embedded_view = self.view_embed[: n_view].unsqueeze(0).repeat(batch_size//n_view, 1, 1)
+                embedded_view = self.view_embed[: n_view].unsqueeze(0).repeat(batch_size // n_view, 1, 1)
                 embedded_view = rearrange(embedded_view, 'b v c -> (b v) c').unsqueeze(1)
                 vemb = self.view_ada(embedded_view)
                 temb = temb + vemb
