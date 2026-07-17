@@ -143,9 +143,11 @@ class LTXVideoRotaryPosEmbed(nn.Module):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: torch.Tensor,  # (B x V, L, inner_dim)
         rope_interpolation_scale: Optional[Tuple[torch.Tensor, float, float]] = None,
-        num_frames=None, height=None, width=None,
+        num_frames=None,
+        height=None,
+        width=None,
         **kwargs,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         batch_size = hidden_states.shape[0]
@@ -156,6 +158,7 @@ class LTXVideoRotaryPosEmbed(nn.Module):
         grid_f = torch.arange(num_frames, dtype=torch.float32, device=hidden_states.device)
         grid = torch.meshgrid(grid_f, grid_h, grid_w, indexing="ij")
         grid = torch.stack(grid, dim=0)
+        # (B x V, 3, T, H, W); the 3 means (frame, height, width) coordinates
         grid = grid.unsqueeze(0).repeat(batch_size, 1, 1, 1, 1)
 
         """
@@ -171,7 +174,7 @@ class LTXVideoRotaryPosEmbed(nn.Module):
             grid[:, 1: 2] = grid[:, 1: 2] * rope_interpolation_scale[1] * self.patch_size / self.base_height
             grid[:, 2: 3] = grid[:, 2: 3] * rope_interpolation_scale[2] * self.patch_size / self.base_width
 
-        grid = grid.flatten(2, 4).transpose(1, 2)
+        grid = grid.flatten(2, 4).transpose(1, 2)  # (B x V, T x H x W, 3)
 
         start = 1.0
         end = self.theta
@@ -181,13 +184,13 @@ class LTXVideoRotaryPosEmbed(nn.Module):
             self.dim // 6,
             device=hidden_states.device,
             dtype=torch.float32,
-        )
-        freqs = freqs * math.pi / 2.0
-        freqs = freqs * (grid.unsqueeze(-1) * 2 - 1)
-        freqs = freqs.transpose(-1, -2).flatten(2)
+        )  # range: 0 to 1 (inclusive)
+        freqs = freqs * math.pi / 2.0  # range: 0 to pi/2 (inclusive)
+        freqs = freqs * (grid.unsqueeze(-1) * 2 - 1)  # (B x V, T x H x W, 3, dim // 6)
+        freqs = freqs.transpose(-1, -2).flatten(2)  # (B x V, T x H x W, dim // 2)
 
-        cos_freqs = freqs.cos().repeat_interleave(2, dim=-1)
-        sin_freqs = freqs.sin().repeat_interleave(2, dim=-1)
+        cos_freqs = freqs.cos().repeat_interleave(2, dim=-1)  # (B x V, T x H x W, dim)
+        sin_freqs = freqs.sin().repeat_interleave(2, dim=-1)  # (B x V, T x H x W, dim)
 
         if self.dim % 6 != 0:
             cos_padding = torch.ones_like(cos_freqs[:, :, : self.dim % 6])
@@ -195,7 +198,7 @@ class LTXVideoRotaryPosEmbed(nn.Module):
             cos_freqs = torch.cat([cos_padding, cos_freqs], dim=-1)
             sin_freqs = torch.cat([sin_padding, sin_freqs], dim=-1)
 
-        return cos_freqs, sin_freqs
+        return cos_freqs, sin_freqs  # (B x V, T x H x W, dim)
 
 
 @maybe_allow_in_graph
