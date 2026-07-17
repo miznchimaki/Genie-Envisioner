@@ -588,7 +588,7 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
             hidden_states = self.norm_out(hidden_states)
             hidden_states = hidden_states * (1 + scale) + shift
             output = self.proj_out(hidden_states)
-            final_output['video'] = output
+            final_output['video'] = output  # (B x V, L, out_channels)
 
         if return_action:
             if self.action_final_embeddings:

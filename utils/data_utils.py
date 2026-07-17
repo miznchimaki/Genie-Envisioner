@@ -294,7 +294,7 @@ def gen_noise_from_condition_frame_latent(
     """
     mem_size = condition_frame_latent.shape[2]
     num_channels_latents = condition_frame_latent.shape[1] # 128
-    batch_size = condition_frame_latent.size(0)   # bv
+    batch_size = condition_frame_latent.size(0)  # bv
     # latent_num_frames = (num_frames - 1) // vae_temporal_compression_ratio + 1
 
     shape = (batch_size, num_channels_latents, latent_num_frames, latent_height, latent_width)
