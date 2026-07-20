@@ -21,7 +21,6 @@ def get_memory_statistics(precision: int = 3) -> Dict[str, Any]:
         memory_reserved = torch.cuda.memory_reserved(device)
         max_memory_allocated = torch.cuda.max_memory_allocated(device)
         max_memory_reserved = torch.cuda.max_memory_reserved(device)
-
     elif torch.mps.is_available():
         memory_allocated = torch.mps.current_allocated_memory()
 
@@ -38,7 +37,7 @@ def get_memory_statistics(precision: int = 3) -> Dict[str, Any]:
 
 def bytes_to_gigabytes(x: int) -> float:
     if x is not None:
-        return x / 1024**3
+        return x / 1024 ** 3
 
 
 def free_memory() -> None:
@@ -50,7 +49,9 @@ def free_memory() -> None:
     # TODO(aryan): handle non-cuda devices
 
 
-def make_contiguous(x: Union[torch.Tensor, Dict[str, torch.Tensor]]) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
+def make_contiguous(
+    x: Union[torch.Tensor, Dict[str, torch.Tensor]]
+) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
     if isinstance(x, torch.Tensor):
         return x.contiguous()
     elif isinstance(x, dict):

@@ -751,7 +751,7 @@ class Trainer:
                         )
                         model_save_dir = os.path.join(self.save_folder,f'step_{global_step}')
                         model_to_save.save_pretrained(model_save_dir, safe_serialization=True)
-                        del  model_to_save
+                        del model_to_save
             memory_statistics = get_memory_statistics()
             logger.info(f"Memory after epoch {epoch + 1}: {json.dumps(memory_statistics, indent=4)}")
 
