@@ -593,14 +593,14 @@ class LTXVideoTransformer3DModel(ModelMixin, ConfigMixin, FromOriginalModelMixin
         if return_action:
             if self.action_final_embeddings:
                 action_scale_shift_values = self.action_scale_shift_table[None, None] + action_embedded_timestep[:, :, None]
-                action_shift, action_scale = action_scale_shift_values[:,:,0], action_scale_shift_values[:,:,1]
+                action_shift, action_scale = action_scale_shift_values[:, :, 0], action_scale_shift_values[:, :, 1]
                 action_hidden_states = self.action_norm_out(action_hidden_states)
                 action_hidden_states = action_hidden_states * (1 + action_scale) + action_shift
             else:
                 action_hidden_states = self.action_norm_out(action_hidden_states)
                 action_hidden_states = self.action_proj_extra(action_hidden_states)
             if history_action_state is not None:
-                action_hidden_states = action_hidden_states[:, 1:]
+                action_hidden_states = action_hidden_states[:, 1: ]
             action_output = self.action_proj_out(action_hidden_states)
             final_output['action'] = action_output
 
