@@ -289,7 +289,7 @@ def gen_noise_from_condition_frame_latent(
     random value and noise these tokens to the corresponding
     level. The model quickly learns to utilize
     this new information (when provided) as a conditioning signal
-    
+
     condition_frame_latent: (b v) c m h w
     """
     mem_size = condition_frame_latent.shape[2]
