@@ -342,10 +342,10 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
         if self.use_view_embed:
             self.view_embed = nn.Parameter(torch.randn(max_view, hidden_size))
             self.view_ada = nn.Sequential(
-                                            nn.SiLU(),
-                                            # nn.Linear(hidden_size, 6 * hidden_size, bias=True)
-                                            nn.Linear(hidden_size, 3 * hidden_size, bias=True)
-                                        )
+                nn.SiLU(),
+                # nn.Linear(hidden_size, 6 * hidden_size, bias=True)
+                nn.Linear(hidden_size, 3 * hidden_size, bias=True)
+            )
 
         # 4. Transformer Blocks
         self.transformer_blocks = nn.ModuleList(
@@ -389,7 +389,6 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
             )
 
         self.unpack_in_forward = True
-        
 
     def forward(
         self,
@@ -441,7 +440,17 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
 
             if self.config.concat_padding_mask:
                 if padding_mask is None:
-                    hidden_states = torch.cat([hidden_states, torch.zeros([batch_size, 1, num_frames, height, width], device=hidden_states.device, dtype=hidden_states.dtype)], dim=1)
+                    hidden_states = torch.cat(
+                        [
+                            hidden_states,
+                            torch.zeros(
+                                [batch_size, 1, num_frames, height, width],
+                                device=hidden_states.device,
+                                dtype=hidden_states.dtype
+                            )
+                        ],
+                        dim=1
+                    )
                 else:
                     padding_mask = transforms.functional.resize(
                         padding_mask, list(hidden_states.shape[-2:]), interpolation=transforms.InterpolationMode.NEAREST
