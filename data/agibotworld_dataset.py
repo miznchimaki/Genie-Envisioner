@@ -217,7 +217,7 @@ class AgiBotWorld(Dataset):
                 self.StatisticInfo = json.load(f)
 
     def get_total_timesteps(self, data_root, cam_name):
-        with open(os.path.join(data_root, "parameters", "camera", cam_name+"_extrinsic_params_aligned.json"), "r") as f:
+        with open(os.path.join(data_root, "parameters", "camera", cam_name + "_extrinsic_params_aligned.json"), "r") as f:
             info = json.load(f)
         total_frames = len(info)
 
