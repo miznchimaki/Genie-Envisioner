@@ -66,7 +66,19 @@ def load_checkpoints(model, pretrained_ckpt, strict=False, ignore_mismatched_siz
         state_dict = load_index_file(os.path.join(pretrained_ckpt, "diffusion_pytorch_model.safetensors.index.json"))
     # in this case we need give the file path
     else:
-        state_dict = load_file(pretrained_ckpt)
+        native_state_dict = load_file(pretrained_ckpt)
+        st_dict_keys = list(native_state_dict.keys())
+        state_dict = dict()
+        for st_key in st_dict_keys:
+            new_st_key = (
+                st_key
+                .replace("model.diffusion_model.", "")  # DiT model prefix
+                .replace("patchify_proj", "proj_in")  # input linear projection in DiT
+                .replace("q_norm", "norm_q")  # RMSNorm in attention
+                .replace("k_norm", "norm_k")  # RMSNorm in attention
+                .replace("adaln_single", "time_embed")  # adaLayerNorm
+            )
+            state_dict[new_st_key] = native_state_dict[st_key]
 
     if strict:
         model.load_state_dict(state_dict, strict=True)
@@ -134,7 +146,12 @@ def load_latent_models(
     **kwargs,
 ) -> Dict[str, nn.Module]:
     vae = model_cls.from_pretrained(
-        model_id, subfolder="vae", torch_dtype=vae_dtype, revision=revision, cache_dir=cache_dir
+        model_id,
+        subfolder="vae",
+        torch_dtype=vae_dtype,
+        revision=revision,
+        cache_dir=cache_dir,
+        output_loading_info=True
     )
     return {"vae": vae}
 
