@@ -1,11 +1,11 @@
-model_name: 'ltx_train'
+model_name: 'GE-Base-train-10-tasks-reproduce'
 is_i2v: True
 report_to: None
 tracker_name: ltx_trainer
 
 logging_dir: logs
-output_dir: PATH_TO_SAVE_LOGS_AND_CHECKPOINTS
-pretrained_model_name_or_path: PATH_TO_PRETRAINED_WEIGHTS_OF_VAE_AND_TOKENIZER
+output_dir: /mnt/lustre/lizongshu/outputs/Genie-Envisioner/GE-Base-pretraining-reproduce-10tasks
+pretrained_model_name_or_path: /mnt/lustre/lizongshu/ckpts/LTX-Video
 
 ###
 train_data_class_path: data/agibotworld_dataset.py
@@ -35,10 +35,10 @@ train_mode: 'video_only'
 action_loss_scale: 1.0
 
 # total training step is decided by the minimum of the below two
-train_steps: 1000000
-train_epochs: 10000
+train_steps: None
+train_epochs: 1
 steps_to_save: 2000
-steps_to_log: 20
+steps_to_log: 1
 steps_to_val: 2000
 
 mixed_precision: bf16
@@ -95,7 +95,7 @@ flow_mode_scale: 1.29
 pixel_wise_timestep: True
 
 diffusion_model:
-  model_path: PATH_TO_CHECKPOINT_SAFETENSOR
+  model_path: /mnt/lustre/lizongshu/ckpts/LTX-Video/ltx-video-2b-v0.9.safetensors
   config:
     activation_fn: gelu-approximate
     attention_bias: true
@@ -119,8 +119,8 @@ diffusion_model:
 
 data:
   train:
-    data_roots: ["path/to/agibot-world/beta"]
-    task_info_root: "root/to/agibot-world/beta/task_info"
+    data_roots: ["/mnt/lustre/lizongshu/datasets/AgiBotWorld-Beta"]
+    task_info_root: "/mnt/lustre/lizongshu/datasets/AgiBotWorld-Beta/task_info"
     domains: ["agibotworld", ]
     sample_size: [192, 256]
     sample_n_frames: 900
@@ -131,10 +131,11 @@ data:
     n_previous: 4
     previous_pick_mode: 'random'
     random_crop: False
-    dataset_info_cache_path: "path/to/save/dataset_meta_info_cache"
+    dataset_info_cache_path: "/mnt/lustre/lizongshu/datasets/AgiBotWorld-Beta/train_data_info_cache.json"
+    specific_tasks: [351, 384, 421, 507, 548, 556, 582, 600, 613, 744]
   val:
-    data_roots: ["path/to/agibot-world/beta"]
-    task_info_root: "root/to/agibot-world/beta/task_info"
+    data_roots: ["/mnt/lustre/lizongshu/datasets/AgiBotWorld-Beta"]
+    task_info_root: "/mnt/lustre/lizongshu/datasets/AgiBotWorld-Beta/task_info"
     domains: ["agibotworld", ]
     sample_size: [192, 256]
     sample_n_frames: 900
@@ -145,7 +146,8 @@ data:
     n_previous: 4
     previous_pick_mode: 'random'
     random_crop: False
-    dataset_info_cache_path: "path/to/save/dataset_meta_info_cache"
+    dataset_info_cache_path: "/mnt/lustre/lizongshu/datasets/AgiBotWorld-Beta/val_data_info_cache.json"
+    specific_tasks: [374, 478]
 
 use_color_jitter: true
 num_inference_step: 5
