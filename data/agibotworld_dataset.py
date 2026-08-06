@@ -486,7 +486,7 @@ class AgiBotWorld(Dataset):
                     ### print error information to debug
                     traceback.print_exc()
                     ### 
-                    idx = random.randint(0, self.length-1)
+                    idx = random.randint(0, self.length - 1)
         sample = dict(
             video=video,
             actions=actions,

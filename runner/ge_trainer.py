@@ -96,7 +96,7 @@ class State:
 
 class Trainer:
 
-    def __init__(self, config_file, to_log=True, output_dir=None) -> None:
+    def __init__(self, config_file, to_log = True, output_dir = None) -> None:
         cd = load(open(config_file, "r"), Loader=Loader)
         args = argparse.Namespace(**cd)
         args.lr = float(args.lr)
@@ -266,7 +266,7 @@ class Trainer:
 
         self.val_index = []
         for _ in range(self.args.batch_size):
-            self.val_index.append(random.randint(0, len(self.val_dataset)-1))
+            self.val_index.append(random.randint(0, len(self.val_dataset) - 1))
         if self.state.accelerator.is_main_process:
             with open(os.path.join(self.save_folder, 'idx.txt'), "w") as file:
                 file.write(", ".join(map(str, self.val_index)))
@@ -309,7 +309,13 @@ class Trainer:
         if getattr(self.args, 'vae_path', False):
             self.vae = load_vae_models(vae_class, self.args.vae_path).to(device, dtype=dtype).eval()
         else:
-            self.vae = load_latent_models(vae_class, self.args.pretrained_model_name_or_path)["vae"].to(device, dtype=dtype).eval()
+            vae_load_result = load_latent_models(vae_class, self.args.pretrained_model_name_or_path)["vae"]
+            self.vae = vae_load_result[0].to(device, dtype=dtype).eval()
+            vae_load_msg = vae_load_result[1]
+            logger.info(f"VAE loading missing keys: {vae_load_msg['missing_keys']}")
+            logger.info(f"VAE loading unexpected keys: {vae_load_msg['unexpected_keys']}")
+            logger.info(f"VAE loading mismatched keys: {vae_load_msg['mismatched_keys']}")
+            logger.info(f"VAE loading error_msgs: {vae_load_msg['error_msgs']}")
         if isinstance(self.vae.latents_mean, List):
             self.vae.latents_mean = torch.FloatTensor(self.vae.latents_mean)
         if isinstance(self.vae.latents_std, List):
@@ -353,9 +359,9 @@ class Trainer:
 
     def prepare_trainable_parameters(self):
         logger.info("Initializing trainable parameters")
-        
+
         components_to_disable_grads = []
-            
+
         for component in components_to_disable_grads:
             if component is not None:
                 component.requires_grad_(False)
@@ -379,7 +385,7 @@ class Trainer:
         train_mode = self.args.train_mode
 
         self.state.train_epochs = self.args.train_epochs
-        self.state.train_steps = self.args.train_steps
+        self.state.train_steps = self.args.train_steps if isinstance(self.args.train_steps, (int, float)) else eval(self.args.train_steps)
 
         # Make sure the trainable params are in float32
         if self.args.mixed_precision == "fp16":
