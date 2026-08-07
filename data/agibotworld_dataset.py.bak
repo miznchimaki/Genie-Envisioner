@@ -13,7 +13,7 @@ import numpy as np
 
 import torch
 from torch.utils.data.dataset import Dataset
-from decord import VideoReader, cpu
+from moviepy.editor import VideoFileClip
 import torchvision.transforms as transforms
 from tqdm import tqdm
 
@@ -308,73 +308,19 @@ class AgiBotWorld(Dataset):
         """
         seek video frames according to the input slices;
         output a list of videos
-
-        Use Decord instead of MoviePy to avoid spawning one external
-        FFmpeg subprocess per VideoFileClip under multi-worker training.
         """
         video_list = []
-
-        # Convert numpy/int-like indexes to normal Python int.
-        frame_indices = [int(idx) for idx in slices]
-
         for cam_name in cam_name_list:
-            video_path = os.path.join(
-                video_root,
-                "videos",
-                cam_name + "_color.mp4"
-            )
-
-            # IMPORTANT:
-            # num_threads=1 prevents every DataLoader worker from creating
-            # another large pool of decoder threads.
-            video_reader = VideoReader(
-                video_path,
-                ctx=cpu(0),
-                num_threads=1,
-            )
-
-            total_frames = len(video_reader)
-
-            # Defensive check. Normally get_frame_indexes() already keeps
-            # indexes inside the valid range.
-            if frame_indices:
-                min_idx = min(frame_indices)
-                max_idx = max(frame_indices)
-
-                if min_idx < 0 or max_idx >= total_frames:
-                    raise IndexError(
-                        f"Frame index out of range: "
-                        f"[{min_idx}, {max_idx}], "
-                        f"video has {total_frames} frames: "
-                        f"{video_path}"
-                    )
-
-            # Decord:
-            # (T, H, W, C), uint8 RGB
-            video = video_reader.get_batch(
-                frame_indices
-            ).asnumpy()
-
-            # Explicitly release the reader as soon as this camera is done.
-            del video_reader
-
-            # Keep exactly the same output format as the original code:
-            #
-            # (T, H, W, C)
-            # ->
-            # (C, T, H, W)
-            video = torch.from_numpy(
-                np.ascontiguousarray(video)
-            ).permute(
-                3, 0, 1, 2
-            ).contiguous()
-
-            # Keep the original normalization behavior.
+            video_reader = VideoFileClip(os.path.join(video_root, "videos", cam_name + '_color.mp4'))
+            fps = video_reader.fps
+            video = []
+            for idx in slices:
+                video.append(video_reader.get_frame(float(idx) / fps))  # frame shape: (H, W, C); frame dtype: np.unit8
+            video = torch.from_numpy(np.stack(video)).permute(3, 0, 1, 2).contiguous()  # (C, T, H, W)
             video = video.float() / 255.
-
+            video_reader.close()
             video_list.append(video)
-
-        return video_list
+        return video_list  # list with length V, Tensor shape: (C, T, H, W)
 
     def get_intrin_and_extrin(self, cam_name_list, data_root, slices):
         """
