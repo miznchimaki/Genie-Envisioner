@@ -82,6 +82,7 @@ class State:
     weight_dtype: torch.dtype = None
     train_epochs: int = None
     train_steps: int = None
+    train_steps_per_rank: int = None
     overwrote_max_train_steps: bool = False
     num_trainable_parameters: int = 0
     learning_rate: float = None
@@ -448,6 +449,7 @@ class Trainer:
         num_update_steps_per_epoch = math.ceil(len(self.train_dataloader) / self.args.gradient_accumulation_steps)
         if self.state.train_steps is None:
             self.state.train_steps = self.state.train_epochs * num_update_steps_per_epoch
+            self.state.train_steps_per_rank = math.ceil(self.state.train_steps / int(os.getenv('WORLD_SIZE', None)))
             self.state.overwrote_max_train_steps = True
 
         lr_scheduler = get_scheduler(
@@ -496,7 +498,7 @@ class Trainer:
         first_epoch = 0
         initial_global_step = 0
         progress_bar = tqdm(
-            range(0, self.state.train_steps),
+            range(0, self.state.train_steps_per_rank),
             initial=initial_global_step,
             desc="Training steps",
             disable=not self.state.accelerator.is_local_main_process,

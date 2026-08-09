@@ -172,6 +172,7 @@ valid/*
 *.pyc
 # custom_configs/
 logs/
+logs
 output/
 outputs
 evaluation_results/
