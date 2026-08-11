@@ -196,7 +196,7 @@ class MVActor:
         print(f'SPATIAL_DOWN_RATIO of VAE :{self.SPATIAL_DOWN_RATIO}')
         print(f'TEMPORAL_DOWN_RATIO of VAE :{self.TEMPORAL_DOWN_RATIO}')
 
-        self.chunk = (self.args.data["train"]["chunk"]-1)//self.TEMPORAL_DOWN_RATIO+1
+        self.chunk = (self.args.data["train"]["chunk"] - 1) // self.TEMPORAL_DOWN_RATIO + 1
         self.action_chunk = self.args.data["train"]["action_chunk"]
         self.resize = self.args.data["train"]["sample_size"]
 
@@ -234,7 +234,7 @@ class MVActor:
         )
 
     @torch.no_grad()
-    def play(self, obs, prompt, idx=0, num_inference_steps=None, execution_step=1, state=None, state_zeropadding=[0,0], ndim_action=None):
+    def play(self, obs, prompt, idx=0, num_inference_steps=None, execution_step=1, state=None, state_zeropadding=[0, 0], ndim_action=None):
         """
         obs: One of the followings
             1. torch.tensor of shape: {v, 3, h, w}, ranging from -1 to 1
@@ -245,11 +245,10 @@ class MVActor:
         """
         assert execution_step >= 1 and execution_step <= 100, "execution_step should be in [1, 100]"
 
-
         if obs.dtype == np.uint8:
             ### obs / 255 * 2 - 1
             obs = obs.astype(np.float32) / 127.5 - 1
-            obs = np.transpose(obs, (0,3,1,2))
+            obs = np.transpose(obs, (0, 3, 1, 2))
 
         if isinstance(obs, np.ndarray):
             obs = torch.tensor(obs)
@@ -260,15 +259,12 @@ class MVActor:
         v, c, h, w = obs.shape
         obs = obs.to(self.device, dtype=self.dtype)
 
-
         if self.add_state:
-            
             if self.norm_type == "meanstd":
                 ### C -> 1,C
                 sta_mean = np.concatenate([np.zeros(state_zeropadding[0]), self.sta_mean, np.zeros(state_zeropadding[1])])
                 sta_std = np.concatenate([np.ones(state_zeropadding[0]), self.sta_std, np.ones(state_zeropadding[1])])
                 normed_state = np.expand_dims((state-sta_mean)/sta_std, axis=0)
-            
             elif self.norm_type == "minmax":
                 ### C -> 1,C
                 sta_min = np.concatenate([np.zeros(state_zeropadding[0]), self.sta_min, np.zeros(state_zeropadding[1])])
@@ -284,7 +280,6 @@ class MVActor:
             ### 1,1,C
             history_action_state = history_action_state.unsqueeze(dim=0)
             assert(len(history_action_state.shape) == 3 and history_action_state.shape[-1]==self.action_dim)
-
         else:
             history_action_state = None
 
@@ -305,7 +300,7 @@ class MVActor:
                 self.obs[-1] = obs
             self.buffer = [self.obs[-1]]
 
-        obs_tensor = torch.stack(self.obs, dim=1)  # from v, c, h, w to v, t, c, h, w
+        obs_tensor = torch.stack(self.obs, dim=1)  # from (v, c, h, w) to (v, t, c, h, w)
         obs_tensor = rearrange(obs_tensor, "v t c h w -> c v t h w")  # c,t,h,w
         obs_tensor = obs_tensor.unsqueeze(0)  # b,c,v,t,h,w
         obs_tensor = rearrange(obs_tensor, "b c v t h w -> (b v) c t h w")
@@ -337,14 +332,14 @@ class MVActor:
         )[0]
 
         ### 1,t,c
-        actions_pred = pred_all["action"].detach().cpu()[:,:,:ndim_action]
+        actions_pred = pred_all["action"].detach().cpu()[:, :, : ndim_action]
 
         ### original state: 1,1,C
         state = torch.from_numpy(state).unsqueeze(dim=0).unsqueeze(dim=0)
 
         ### for dual-arm only
         gripper_dim = self.gripper_dim
-        arm_dim = (self.action_dim - 2*self.gripper_dim)//2
+        arm_dim = (self.action_dim - 2 * self.gripper_dim) // 2
 
         if self.action_type == "absolute":
             ### train:
@@ -352,11 +347,10 @@ class MVActor:
             ### infer:
             ### denorm(abs_act)
             if self.norm_type == "meanstd":
-                final_actions_pred = actions_pred[:, :execution_step, :] * self.act_std + self.act_mean
+                final_actions_pred = actions_pred[:, : execution_step, :] * self.act_std + self.act_mean
             elif self.norm_type == "minmax":
-                final_actions_pred = (actions_pred + 1)/2
-                final_actions_pred = final_actions_pred[:, :execution_step, :] * (self.act_max - self.act_min + 1e-6) + self.act_min
-
+                final_actions_pred = (actions_pred + 1) / 2
+                final_actions_pred = final_actions_pred[:, : execution_step, :] * (self.act_max - self.act_min + 1e-6) + self.act_min
         elif self.action_type == "delta":
             ### train:
             ### delta_act = act_t - act_{t-1}
@@ -364,39 +358,44 @@ class MVActor:
             ### infer:
             ### cumsum(denorm(output)
             if self.norm_type == "meanstd":
-                final_actions_pred = actions_pred[:, :execution_step, :] * self.act_std + self.act_mean
+                final_actions_pred = actions_pred[:, : execution_step, :] * self.act_std + self.act_mean
             elif self.norm_type == "minmax":
-                final_actions_pred = (actions_pred + 1)/2
-                final_actions_pred = final_actions_pred[:, :execution_step, :] * (self.act_max - self.act_min + 1e-6) + self.act_min
+                final_actions_pred = (actions_pred + 1) / 2
+                final_actions_pred = final_actions_pred[:, : execution_step, :] * (self.act_max - self.act_min + 1e-6) + self.act_min
             ### left arm
-            final_actions_pred[:, :, :arm_dim] = torch.cumsum(final_actions_pred[:, :, :arm_dim], dim=1) + state[:, :, :arm_dim]
+            final_actions_pred[:, :, : arm_dim] = torch.cumsum(final_actions_pred[:, :, : arm_dim], dim=1) + state[:, :, : arm_dim]
             ### right arm
-            final_actions_pred[:, :, arm_dim+gripper_dim:2*arm_dim+gripper_dim] = torch.cumsum(final_actions_pred[:, :, arm_dim+gripper_dim:2*arm_dim+gripper_dim], dim=1) + state[:, :, arm_dim+gripper_dim:2*arm_dim+gripper_dim]
-
+            final_actions_pred[:, :, arm_dim + gripper_dim: 2 * arm_dim + gripper_dim] = \
+                torch.cumsum(
+                    final_actions_pred[:, :, arm_dim+gripper_dim: 2 * arm_dim + gripper_dim],
+                    dim=1
+                ) + state[:, :, arm_dim + gripper_dim: 2 * arm_dim + gripper_dim]
         elif self.action_type == "relative":
             ### train:
             ### rel_act = norm(act) - norm(state)
             ### infer:
             ### denorm(output + norm(state))
-            final_actions_pred = actions_pred[:, :execution_step, :]
+            final_actions_pred = actions_pred[:, : execution_step, :]
             if self.norm_type == "meanstd":
                 sta_mean = torch.from_numpy(self.sta_mean).unsqueeze(dim=0).unsqueeze(dim=0)
                 sta_std = torch.from_numpy(self.sta_std).unsqueeze(dim=0).unsqueeze(dim=0)
-                normed_state = (state[:,:,:ndim_action]-sta_mean[:,:,:ndim_action])/sta_std[:,:,:ndim_action]
+                normed_state = (state[:, :, : ndim_action] - sta_mean[:, :, : ndim_action]) / sta_std[:, :, : ndim_action]
             elif self.norm_type == "minmax":
                 sta_min = torch.from_numpy(self.sta_min).unsqueeze(dim=0).unsqueeze(dim=0)
                 sta_max = torch.from_numpy(self.sta_max).unsqueeze(dim=0).unsqueeze(dim=0)
-                normed_state = (state[:,:,:ndim_action]-sta_min[:,:,:ndim_action])/(sta_max[:,:,:ndim_action]-sta_min[:,:,:ndim_action]+1e-6)
+                normed_state = (state[:, :, : ndim_action] - sta_min[:, :, : ndim_action]) / \
+                               (sta_max[:, :, : ndim_action] - sta_min[:, :, : ndim_action] + 1e-6)
                 normed_state = normed_state * 2 - 1.0
-            final_actions_pred[:, :, :arm_dim] = final_actions_pred[:, :, :arm_dim] + normed_state[:, :, :arm_dim]
-            final_actions_pred[:, :, arm_dim+gripper_dim:2*arm_dim+gripper_dim] = final_actions_pred[:, :, arm_dim+gripper_dim:2*arm_dim+gripper_dim] + normed_state[:, :, arm_dim+gripper_dim:2*arm_dim+gripper_dim]
+            final_actions_pred[:, :, : arm_dim] = final_actions_pred[:, :, : arm_dim] + normed_state[:, :, : arm_dim]
+            final_actions_pred[:, :, arm_dim + gripper_dim: 2 * arm_dim + gripper_dim] = \
+                final_actions_pred[:, :, arm_dim+gripper_dim: 2 * arm_dim + gripper_dim] + \
+                normed_state[:, :, arm_dim + gripper_dim: 2 * arm_dim + gripper_dim]
             
             if self.norm_type == "meanstd":
                 final_actions_pred = final_actions_pred * self.act_std + self.act_mean
             elif self.norm_type == "minmax":
-                final_actions_pred = (final_actions_pred + 1)/2
+                final_actions_pred = (final_actions_pred + 1) / 2
                 final_actions_pred = final_actions_pred * (self.act_max - self.act_min + 1e-6) + self.act_min
-
         else:
             raise NotImplementedError
 
