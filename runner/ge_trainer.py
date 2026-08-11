@@ -809,7 +809,7 @@ class Trainer:
         )
 
         batch = next(iter(self.val_dataloader))
-        image = batch['video'][:,:,:,:self.args.data['train']['n_previous']].clone()  # shape b,c,v,t,h,w 
+        image = batch['video'][:, :, :, : self.args.data['train']['n_previous']].clone()  # shape b,c,v,t,h,w 
         prompt = batch['caption']
         gt_video = batch['video']
         b, c, v, t, h, w = image.shape

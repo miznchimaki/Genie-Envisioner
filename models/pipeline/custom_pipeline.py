@@ -672,7 +672,7 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
 
 
         if return_action:
-            assert n_chunk==1, "action-inference pipeline only support single chunk prediction now"
+            assert n_chunk == 1, "action-inference pipeline only support single chunk prediction now"
         
 
         # pre-compute latent shape
@@ -819,7 +819,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
             if not show_progress:
                 self.set_progress_bar_config(disable=True)
             with self.progress_bar(total=num_inference_steps) as progress_bar:
-                
                 for i, t in enumerate(timesteps):
                     if self.interrupt:
                         continue
@@ -890,7 +889,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                         condition_mask=conditioning_mask,
                     )[0]
 
-
                     if store_buffer:
                         video_states_buffer = noise_pred["video_states_buffer"]
 
@@ -935,7 +933,7 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                             video_noise_pred, t, noise_latents, return_dict=False
                         )[0]
 
-                        latents = torch.cat([latents[:, :, :n_prev], pred_latents], dim=2)
+                        latents = torch.cat([latents[:, :, : n_prev], pred_latents], dim=2)
                         latents = self._pack_latents(latents, self.transformer_spatial_patch_size, self.transformer_temporal_patch_size)
 
                     progress_bar.update()
@@ -959,12 +957,12 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                 else:
                     video_list = torch.cat((video_list, clean_frames), dim=2)
 
-                if i_chunk < n_chunk-1:
+                if i_chunk < n_chunk - 1:
                     ### reset scheduler
                     self.scheduler._step_index = None
 
                     ### prepare memories for next chunk
-                    new_mem_idxs = torch.linspace(0, video_list.shape[2]-1, n_prev).round().long()
+                    new_mem_idxs = torch.linspace(0, video_list.shape[2] - 1, n_prev).round().long()
                     new_mems = video_list[:, :, new_mem_idxs, :, :].clone()
                     new_mems = rearrange(new_mems, "bv c t h w -> (bv t) c h w").unsqueeze(2)
                     init_latents = retrieve_latents(self.vae.encode(new_mems), generator, sample_mode=sample_mode)

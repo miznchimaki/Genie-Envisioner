@@ -407,13 +407,11 @@ class MVActor:
 
         return final_actions_pred.data.cpu().numpy()
 
-
     def reset(self):
         self.obs = []
         self.buffer = []
         self.action_buffer = torch.zeros(self.action_chunk, self.action_dim, dtype=torch.bfloat16)
         self.cur_step = 0
-
 
     def change_step(self, pb_pred):
         return pb_pred.median() >= 0.99
