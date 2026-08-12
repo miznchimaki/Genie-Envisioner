@@ -264,12 +264,12 @@ class MVActor:
                 ### C -> 1,C
                 sta_mean = np.concatenate([np.zeros(state_zeropadding[0]), self.sta_mean, np.zeros(state_zeropadding[1])])
                 sta_std = np.concatenate([np.ones(state_zeropadding[0]), self.sta_std, np.ones(state_zeropadding[1])])
-                normed_state = np.expand_dims((state-sta_mean)/sta_std, axis=0)
+                normed_state = np.expand_dims((state-sta_mean) / sta_std, axis=0)
             elif self.norm_type == "minmax":
                 ### C -> 1,C
                 sta_min = np.concatenate([np.zeros(state_zeropadding[0]), self.sta_min, np.zeros(state_zeropadding[1])])
-                sta_max = np.concatenate([np.ones(state_zeropadding[0])-1e-6, self.sta_max, np.ones(state_zeropadding[1])-1e-6])
-                normed_state = np.expand_dims((state-sta_min)/(sta_max-sta_min+1e-6), axis=0)
+                sta_max = np.concatenate([np.ones(state_zeropadding[0]) - 1e-6, self.sta_max, np.ones(state_zeropadding[1]) - 1e-6])
+                normed_state = np.expand_dims((state-sta_min) / (sta_max - sta_min + 1e-6), axis=0)
                 normed_state = normed_state * 2 -1
                 if state_zeropadding[0] > 0:
                     normed_state[:,:state_zeropadding[0]] *= 0
@@ -279,7 +279,7 @@ class MVActor:
             history_action_state = torch.from_numpy(normed_state).to(self.device, dtype=self.dtype)
             ### 1,1,C
             history_action_state = history_action_state.unsqueeze(dim=0)
-            assert(len(history_action_state.shape) == 3 and history_action_state.shape[-1]==self.action_dim)
+            assert(len(history_action_state.shape) == 3 and history_action_state.shape[-1] == self.action_dim)
         else:
             history_action_state = None
 

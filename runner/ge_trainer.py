@@ -816,9 +816,7 @@ class Trainer:
         negative_prompt = ''
 
         batch_size = 1
-
         image = image[:batch_size]
-
         image = rearrange(image, 'b c v t h w -> (b v) c t h w')
         num_denois_steps = self.args.num_inference_step
 

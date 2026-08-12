@@ -669,11 +669,8 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                 If `return_dict` is `True`, [`CustomPipelineOutput`] is returned, otherwise a `tuple` is
                 returned where the first element is a list with the generated images.
         """
-
-
         if return_action:
             assert n_chunk == 1, "action-inference pipeline only support single chunk prediction now"
-        
 
         # pre-compute latent shape
         self.transformer.eval()
