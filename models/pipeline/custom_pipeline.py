@@ -796,7 +796,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
             self.vae_spatial_compression_ratio,
         )
 
-
         # 7. Denoising loop
         if noise_seed:
             video_generator = torch.Generator(device=device).manual_seed(noise_seed)
