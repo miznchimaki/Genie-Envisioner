@@ -896,7 +896,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                             action_noise_pred = noise_pred["action"].float()
                         
                         actions = self.scheduler_action.step(action_noise_pred, t, actions, return_dict=False)[0]
-                        
                     if return_video:
                         video_noise_pred = noise_pred["video"].float()
 

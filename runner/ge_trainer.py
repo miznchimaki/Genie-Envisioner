@@ -493,7 +493,7 @@ class Trainer:
             "gradient accumulation steps": self.args.gradient_accumulation_steps,
         }
         logger.info(f"Training configuration: {json.dumps(info, indent=4)}")
-        
+
         global_step = 0
         first_epoch = 0
         initial_global_step = 0

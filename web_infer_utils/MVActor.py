@@ -84,7 +84,6 @@ class MVActor:
 
         self.args = args
 
-
         self.dtype = torch.bfloat16
         self.device = "cuda"
         self.prepare_models()
@@ -106,10 +105,10 @@ class MVActor:
         if self.norm_type == "meanstd":
             ### (1,1,C)
             self.act_mean = torch.tensor(self.StatisticInfo[action_statistic_name]["mean"]).unsqueeze(0).unsqueeze(0)
-            self.act_std = torch.tensor(self.StatisticInfo[action_statistic_name]["std"]).unsqueeze(0).unsqueeze(0)+1e-6
+            self.act_std = torch.tensor(self.StatisticInfo[action_statistic_name]["std"]).unsqueeze(0).unsqueeze(0) + 1e-6
             ### (C, )
             self.sta_mean = np.array(self.StatisticInfo[state_statistic_name]["mean"])
-            self.sta_std = np.array(self.StatisticInfo[state_statistic_name]["std"])+1e-6
+            self.sta_std = np.array(self.StatisticInfo[state_statistic_name]["std"]) + 1e-6
             if self.args.data['val'].get('valid_act_dim', None) is not None:
                 self.valid_act_dim = self.args.data['val']['valid_act_dim']
                 self.act_mean = self.act_mean[:,:,:self.valid_act_dim]
@@ -134,7 +133,6 @@ class MVActor:
                 self.sta_min = self.sta_min[:self.valid_sta_dim]
                 self.sta_max = self.sta_max[:self.valid_sta_dim]
 
-        
         self.obs = []
         self.buffer = []
         self.prev_chunk_buffer = None
