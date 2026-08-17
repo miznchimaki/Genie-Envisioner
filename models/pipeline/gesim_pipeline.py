@@ -311,7 +311,6 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
 
         return prompt_embeds, negative_prompt_embeds
 
-
     # Copied from diffusers.pipelines.cosmos.pipeline_cosmos_text2world.CosmosTextToWorldPipeline.check_inputs
     def check_inputs(
         self,
@@ -328,7 +327,8 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
             k in self._callback_tensor_inputs for k in callback_on_step_end_tensor_inputs
         ):
             raise ValueError(
-                f"`callback_on_step_end_tensor_inputs` has to be in {self._callback_tensor_inputs}, but found {[k for k in callback_on_step_end_tensor_inputs if k not in self._callback_tensor_inputs]}"
+                f"`callback_on_step_end_tensor_inputs` has to be in {self._callback_tensor_inputs}, "
+                f"but found {[k for k in callback_on_step_end_tensor_inputs if k not in self._callback_tensor_inputs]}"
             )
 
         if prompt is not None and prompt_embeds is not None:
@@ -471,7 +471,8 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
         # if self.safety_checker is None:
         #     raise ValueError(
         #         f"You have disabled the safety checker for {self.__class__}. This is in violation of the "
-        #         "[NVIDIA Open Model License Agreement](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license). "
+        #         "[NVIDIA Open Model License Agreement]"
+        #         "(https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license). "
         #         f"Please ensure that you are compliant with the license agreement."
         #     )
 
@@ -546,7 +547,8 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
         num_channels_latents = self.vae.z_dim
         if video.shape[2] > n_prev:  # pyright: ignore
             video = video[:, :, :n_prev]  # pyright: ignore
-        latents, conditioning_latents, cond_indicator, uncond_indicator, cond_mask, uncond_mask = self.prepare_latents(
+        latents, conditioning_latents, cond_indicator, \
+        uncond_indicator, cond_mask, uncond_mask = self.prepare_latents(
             video,  # memory only! (b v) c t h w
             batch_size * n_view,
             num_channels_latents,
@@ -639,7 +641,11 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
                     # replace :n_prev frames with clean video latents
                     # uncond_latent = uncond_indicator * unconditioning_latents + (1 - uncond_indicator) * uncond_latent
                     uncond_latent = torch.cat([conditioning_latents, uncond_latent], dim=2)  # frame
-                    uncond_latent = torch.cat([uncond_latent, cond_to_concat.to(device=cond_latent.device, dtype=cond_latent.dtype)], dim=1)  # channel
+                    uncond_latent = torch.cat([
+                            uncond_latent,
+                            cond_to_concat.to(device=cond_latent.device, dtype=cond_latent.dtype)
+                        ], dim=1
+                    )  # channel
                     uncond_latent = uncond_latent.to(transformer_dtype)
                     uncond_timestep = uncond_indicator * t_conditioning + (1 - uncond_indicator) * timestep
                     uncond_timestep = uncond_timestep.to(transformer_dtype)
@@ -726,8 +732,6 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
 
         return CosmosPipelineOutput(frames=video)
 
-
-
     def prepare_latents(
         self,
         video: torch.Tensor,  # (b v) c t h w
@@ -750,7 +754,10 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
 
         num_cond_frames = video.size(2)
         num_cond_latent_frames = num_cond_frames  # encode memory separately
-        init_latents = [retrieve_latents(self.vae.encode(video[:, :, it].unsqueeze(2)), generator) for it in range(video.size(2))]
+        init_latents = [
+            retrieve_latents(self.vae.encode(video[:, :, it].unsqueeze(2)), generator)
+            for it in range(video.size(2))
+        ]
 
         init_latents = torch.cat(init_latents, dim=2).to(dtype)
 
@@ -771,7 +778,6 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
             latents = randn_tensor(shape, generator=generator, device=device, dtype=dtype)
         else:
             latents = latents.to(device=device, dtype=dtype)
-
         latents = latents * self.scheduler.config.sigma_max  # sigma_max = 80.0
 
         padding_shape = (batch_size, 1, num_cond_latent_frames+num_latent_frames, latent_height, latent_width)

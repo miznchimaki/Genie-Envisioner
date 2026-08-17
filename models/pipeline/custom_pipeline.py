@@ -845,7 +845,6 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
                         actions_in = actions_in.to(prompt_embeds.dtype)
                         if history_action_state is not None:
                             history_action_state_in = history_action_state_in.to(device=device, dtype=prompt_embeds.dtype)
-
                     else:
                         actions_in = None
                         action_timesteps = None
@@ -853,15 +852,14 @@ class CustomPipeline(DiffusionPipeline, FromSingleFileMixin):
 
                     # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
                     timestep = t.expand(latent_model_input.shape[0])
-                    
+
                     if pixel_wise_timestep:
                         # shape: bv, thw
                         timestep = timestep.unsqueeze(-1) * (1 - conditioning_mask)
                     else:
                         # shape: bv, t
                         timestep = timestep.unsqueeze(-1) * (1 - cond_indicator)
-                        
-                    
+
                     noise_pred = self.transformer(
                         hidden_states=latent_model_input,
                         encoder_hidden_states=prompt_embeds,
