@@ -69,7 +69,7 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
 
     if isinstance(pose, np.ndarray):
         pose = torch.tensor(pose, dtype=torch.float32)
-    
+
     ee_key_pts = torch.tensor([
         [0, 0, 0, 1],
         [0.1, 0, 0, 1],
@@ -77,10 +77,9 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
         [0, 0, 0.1, 1]
     ], dtype=torch.float32, device=pose.device).view(1,1,4,4).permute(0,1,3,2)
 
-
     ### 1, t, 4, 4
-    pose_l_mat = get_transformation_matrix_from_quat(pose[:, 0:7]).unsqueeze(dim=0)
-    pose_r_mat = get_transformation_matrix_from_quat(pose[:, 8:15]).unsqueeze(dim=0)
+    pose_l_mat = get_transformation_matrix_from_quat(pose[:, 0: 7]).unsqueeze(dim=0)
+    pose_r_mat = get_transformation_matrix_from_quat(pose[:, 8: 15]).unsqueeze(dim=0)
 
     ### v, t, 4, 4
     ee2cam_l = torch.matmul(w2c, pose_l_mat)
@@ -106,17 +105,15 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
     intrinsic = intrinsic.unsqueeze(1)
 
     ### v, t, 3, 4
-    uvs_l0 = torch.matmul(intrinsic, pts_l[:,:,:3,:])
-    uvs_l = (uvs_l0 / pts_l[:,:,2:3,:])[:,:,:2,:].permute(0,1,3,2).to(dtype=torch.int64)
+    uvs_l0 = torch.matmul(intrinsic, pts_l[:, :, : 3, :])
+    uvs_l = (uvs_l0 / pts_l[:, :, 2: 3, :])[:, :, : 2, :].permute(0, 1, 3, 2).to(dtype=torch.int64)
 
     ### v, t, 3, 4
-    uvs_r0 = torch.matmul(intrinsic, pts_r[:,:,:3,:])
-    uvs_r = (uvs_r0 / pts_r[:,:,2:3,:])[:,:,:2,:].permute(0,1,3,2).to(dtype=torch.int64)
+    uvs_r0 = torch.matmul(intrinsic, pts_r[:, :, : 3, :])
+    uvs_r = (uvs_r0 / pts_r[:, :, 2: 3, :])[:, :, : 2, :].permute(0, 1, 3, 2).to(dtype=torch.int64)
 
     all_img_list = []
-
     for icam in range(w2c.shape[0]):  # traverse by camera viewpoint
-        
         l_xyz = pose[:, 0: 3].clone()
         r_xyz = pose[:, 8: 11].clone()
         c_xyz = c2w[icam, :, : 3, 3].clone()
@@ -130,7 +127,6 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
 
         img_list = []
         for i in range(pose.shape[0]):  # traverse by time step
-            
             img = np.zeros((h, w, 3), dtype=np.uint8) + 50
 
             normalized_value_l = pose[i, 7].item() / 120
@@ -153,7 +149,7 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
                 base = np.array(points[0]) # points:[4,3]
                 if base[0] < 0 or base[0] >= w or base[1] < 0 or base[1] >= h:
                     continue
-                point = np.array(points[0][:2])
+                point = np.array(points[0][: 2])
                 radius = int(radius)
                 cv2.circle(img, tuple(point), radius, color, -1)
                 # color_circle = int(128*eef)+128
@@ -177,7 +173,6 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
                         cv2.line(img, tuple(base), tuple(point), colors[i - 1], 8)
 
             img_list.append(img / 255.)
-
 
         img_list = np.stack(img_list, axis=0) ### t,h,w,c
         all_img_list.append(img_list)

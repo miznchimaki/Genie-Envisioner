@@ -1,4 +1,3 @@
-
 from typing import Optional, Tuple, Callable
 from einops import rearrange
 
@@ -16,14 +15,17 @@ from diffusers.models.modeling_utils import ModelMixin
 from diffusers.configuration_utils import register_to_config
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 
-from models.cosmos_models.models.transformers.transformer_cosmos import CosmosAdaLayerNormZero, CosmosEmbedding, \
-                                CosmosTransformer3DModel, CosmosPatchEmbed, \
-                                CosmosAdaLayerNorm, \
-                                CosmosLearnablePositionalEmbed, CosmosTransformer3DModel                          
+from models.cosmos_models.models.transformers.transformer_cosmos import (
+    CosmosAdaLayerNormZero, CosmosEmbedding,
+    CosmosTransformer3DModel, CosmosPatchEmbed,
+    CosmosAdaLayerNorm, CosmosLearnablePositionalEmbed,
+    CosmosTransformer3DModel
+)
 
 from models.action_patches.patches import preprocessing_action_states, add_action_expert
 
 logger = logging.get_logger(__name__)
+
 
 class CosmosRotaryPosEmbed(nn.Module):
     def __init__(
@@ -231,19 +233,21 @@ class CosmosTransformerBlock(nn.Module):
 
         # 1. Self Attention
         norm_hidden_states, gate = self.norm1(hidden_states, embedded_timestep, temb)
-        attn_output = self.attn1(norm_hidden_states, 
-                                 image_rotary_emb=image_rotary_emb,
-                                 n_view=n_view,
-                                 cross_view_attn=cross_view_attn
+        attn_output = self.attn1(
+            norm_hidden_states, 
+            image_rotary_emb=image_rotary_emb,
+            n_view=n_view,
+            cross_view_attn=cross_view_attn
             )
         hidden_states = hidden_states + gate * attn_output
 
         # 2. Cross Attention
         norm_hidden_states, gate = self.norm2(hidden_states, embedded_timestep, temb)
-        attn_output = self.attn2(norm_hidden_states, 
-                                 encoder_hidden_states=encoder_hidden_states,
-                                 attention_mask=attention_mask,
-                                 n_view=n_view
+        attn_output = self.attn2(
+            norm_hidden_states, 
+            encoder_hidden_states=encoder_hidden_states,
+            attention_mask=attention_mask,
+            n_view=n_view
             )
         hidden_states = hidden_states + gate * attn_output
 
@@ -513,7 +517,6 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
 
             action_temb, action_embedded_timestep, action_rotary_emb, action_hidden_states = preprocessing_action_states(self, action_states, action_timestep)
 
-
         # 5. Transformer blocks
         for block_idx, block in enumerate(self.transformer_blocks):
             if torch.is_grad_enabled() and self.gradient_checkpointing:
@@ -620,7 +623,6 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
             return (final_output,)
 
         return Transformer2DModelOutput(sample=final_output)
-
 
     def _set_gradient_checkpointing(
         self, enable: bool = True, gradient_checkpointing_func: Callable = torch.utils.checkpoint.checkpoint

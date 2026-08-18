@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 
+
 def get_ray_maps(intrinsic, c2w, H, W):
     ###
     ### intrinsic: vt, 3, 3

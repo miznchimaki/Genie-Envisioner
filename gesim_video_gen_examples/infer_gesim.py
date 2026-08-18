@@ -24,7 +24,6 @@ import logging
 import cv2
 
 
-
 # ----------------------------------------------------
 import diffusers
 from diffusers.optimization import get_scheduler
@@ -53,6 +52,7 @@ def load_config(config_file):
     cd = load(open(config_file, "r"), Loader=Loader)
     args = argparse.Namespace(**cd)
     return args
+
 
 def prepare_model(args, dtype=torch.bfloat16, device="cuda:0"):
 
@@ -102,7 +102,6 @@ def prepare_model(args, dtype=torch.bfloat16, device="cuda:0"):
     total_params = count_model_parameters(diffusion_model)
     print(f'Total parameters for transfomer model:{total_params}')
 
-
     ### Load Diffuser Scheduler
     diffusion_scheduler_class = import_custom_class(
         args.diffusion_scheduler_class, getattr(args, "diffusion_scheduler_class_path", "diffusers")
@@ -115,8 +114,6 @@ def prepare_model(args, dtype=torch.bfloat16, device="cuda:0"):
             scheduler = diffusion_scheduler_class(**args.diffusion_scheduler_args)
         else:
             scheduler = diffusion_scheduler_class()
-
-
 
     # scheduler.config.final_sigmas_type = "sigma_min"
 
@@ -153,7 +150,7 @@ def load_images(args, image_root, valid_cams, size=(256,192)):
     return mv_images, ori_sizes
 
 
-def load_cam_infos(extrinsic_root, intrinsic_root, valid_cams, orisize=None, size=(192,256)):
+def load_cam_infos(extrinsic_root, intrinsic_root, valid_cams, orisize=None, size=(192, 256)):
     extrinsics = []
     intrinsics = []
     for cam in valid_cams:
@@ -164,18 +161,25 @@ def load_cam_infos(extrinsic_root, intrinsic_root, valid_cams, orisize=None, siz
     ### v,3,3
     intrinsics = np.stack(intrinsics, axis=0)
 
-    intrinsics[:,0,0] = intrinsics[:,0,0] * size[1] / orisize[0][1]
-    intrinsics[:,0,2] = intrinsics[:,0,2] * size[1] / orisize[0][1]
-    intrinsics[:,1,1] = intrinsics[:,1,1] * size[0] / orisize[0][0]
-    intrinsics[:,1,2] = intrinsics[:,1,2] * size[0] / orisize[0][0]
+    intrinsics[:, 0, 0] = intrinsics[:, 0, 0] * size[1] / orisize[0][1]
+    intrinsics[:, 0, 2] = intrinsics[:, 0, 2] * size[1] / orisize[0][1]
+    intrinsics[:, 1, 1] = intrinsics[:, 1, 1] * size[0] / orisize[0][0]
+    intrinsics[:, 1, 2] = intrinsics[:, 1, 2] * size[0] / orisize[0][0]
 
     return extrinsics, intrinsics
 
 
-
 def infer(
-    config_file, image_root, extrinsic_root, intrinsic_root, action_path, prompt, save_path,
-    seed=42, device="cuda", default_fps=30
+    config_file,
+    image_root,
+    extrinsic_root,
+    intrinsic_root,
+    action_path,
+    prompt,
+    save_path,
+    seed=42,
+    device="cuda",
+    default_fps=30
 ):
 
     args = load_config(config_file)
@@ -188,7 +192,7 @@ def infer(
 
     tokenizer, text_encoder, vae, diffusion_model, scheduler, pipe = prepare_model(args, device=device)
 
-    valid_cams = [_+"_color" for _ in args.data["train"]["valid_cam"]]
+    valid_cams = [_ + "_color" for _ in args.data["train"]["valid_cam"]]
 
     obs, ori_sizes = load_images(args, image_root, valid_cams, size=(args.data["train"]["sample_size"][1], args.data["train"]["sample_size"][0]))
 
@@ -199,7 +203,13 @@ def infer(
 
     ### extrinsics: v,t,4,4
     ### intrinsics: v,3,3
-    extrinsics, intrinsics = load_cam_infos(extrinsic_root, intrinsic_root, args.data["train"]["valid_cam"], orisize=ori_sizes, size=(args.data["train"]["sample_size"]))
+    extrinsics, intrinsics = load_cam_infos(
+        extrinsic_root,
+        intrinsic_root,
+        args.data["train"]["valid_cam"],
+        orisize=ori_sizes,
+        size=(args.data["train"]["sample_size"])
+    )
     ### actions   : t,c
     actions = np.load(action_path)
 
@@ -209,7 +219,6 @@ def infer(
 
     os.makedirs(save_path, exist_ok=True)
 
-    
     trajs = get_traj_maps(
         actions, torch.linalg.inv(extrinsics), extrinsics, intrinsics, args.data["train"]["sample_size"], radius_gen_func=simple_radius_gen_func
     ) # trajs: c,v,t,h,w
@@ -224,17 +233,15 @@ def infer(
     # )
 
     rays_o, rays_d = get_ray_maps(
-        intrinsics.unsqueeze(dim=1).repeat(1,extrinsics.shape[1],1,1).reshape(-1,3,3), extrinsics.reshape(-1,4,4), args.data["train"]["sample_size"][0], args.data["train"]["sample_size"][1]
+        intrinsics.unsqueeze(dim=1).repeat(1, extrinsics.shape[1], 1, 1).reshape(-1, 3, 3), extrinsics.reshape(-1, 4, 4), args.data["train"]["sample_size"][0], args.data["train"]["sample_size"][1]
     )
     rays = torch.cat((rays_o, rays_d), dim=-1).reshape(trajs.shape[1], trajs.shape[2], rays_o.shape[1], rays_o.shape[2], -1)
-    rays = rays.permute(4,0,1,2,3) # rays: c,v,t,h,w
+    rays = rays.permute(4, 0, 1, 2, 3) # rays: c,v,t,h,w
 
     # c,v,t,h,w
     cond_to_concat = torch.cat((trajs, rays), dim=0)
 
-
     negative_prompt = "The video captures a series of frames showing ugly scenes, static with no motion, motion blur, over-saturation, shaky footage, low resolution, grainy texture, pixelated images, poorly lit areas, underexposed and overexposed scenes, poor color balance, washed out colors, choppy sequences, jerky movements, low frame rate, artifacting, color banding, unnatural transitions, outdated special effects, fake elements, unconvincing visuals, poorly edited content, jump cuts, visual noise, and flickering. Overall, the video is of poor quality."
-
 
     nall = trajs.shape[2]
     nchunk = int(np.ceil((nall-args.data['train']['n_previous'])/args.data['train']['chunk']))
@@ -244,12 +251,11 @@ def infer(
 
     ### init conditions
     ichunk_cond_to_concat = torch.cat((
-        cond_to_concat[:,:,:args.data['train']['n_previous']],
-        cond_to_concat[:,:,args.data['train']['n_previous']:args.data['train']['n_previous']+args.data['train']['chunk']]
+        cond_to_concat[:, :, : args.data['train']['n_previous']],
+        cond_to_concat[:, :, args.data['train']['n_previous']: args.data['train']['n_previous'] + args.data['train']['chunk']]
     ), dim=2)
 
     trajs = ichunk_cond_to_concat[:3].clone()
-
 
     for ichunk in range(nchunk):
 
@@ -281,14 +287,14 @@ def infer(
 
             obs = videos[:,:,mem_idxes].clone()
             ichunk_cond_to_concat = torch.cat((
-                cond_to_concat[:,:,mem_idxes],
-                cond_to_concat[:,:,args.data['train']['n_previous']+(ichunk+1)*args.data['train']['chunk']:args.data['train']['n_previous']+(ichunk+2)*args.data['train']['chunk']]
+                cond_to_concat[:, :, mem_idxes],
+                cond_to_concat[:, :, args.data['train']['n_previous'] + (ichunk + 1) * args.data['train']['chunk']: args.data['train']['n_previous'] + (ichunk + 2) * args.data['train']['chunk']]
             ),dim=2)
 
             if ichunk_cond_to_concat.shape[2]<args.data['train']['chunk']+args.data['train']['n_previous']:
                 ichunk_cond_to_concat = torch.cat([ichunk_cond_to_concat,] + [ichunk_cond_to_concat[:,:,-1:],]*(args.data['train']['chunk']-ichunk_cond_to_concat.shape[2]-args.data['train']['n_previous']), dim=2)
 
-    video_to_save = torch.cat((rearrange(videos[:,:,:ori_trajs.shape[2]], 'v c t h w -> c t h (v w)', v=v), rearrange(ori_trajs, 'c v t h w -> c t h (v w)', v=v),), dim=2)
+    video_to_save = torch.cat((rearrange(videos[:, :, : ori_trajs.shape[2]], 'v c t h w -> c t h (v w)', v=v), rearrange(ori_trajs, 'c v t h w -> c t h (v w)', v=v),), dim=2)
 
     save_video(
         video_to_save,

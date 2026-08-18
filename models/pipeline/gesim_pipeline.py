@@ -595,7 +595,7 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
                 #     latents.size(0), -1, latents.size(2), -1, -1
                 # )  # [B, 1, T, 1, 1]
                 timestep = current_t.view(1, 1, 1, 1, 1).expand(
-                    latents.size(0), -1, latents.size(2)+conditioning_latents.size(2), -1, -1
+                    latents.size(0), -1, latents.size(2) + conditioning_latents.size(2), -1, -1
                 )  # [B, 1, T, 1, 1]
                 # timestep = timestep * 1000  # LTX, timestep ranges from 1 to 1000
 
@@ -607,7 +607,8 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
                 n_fut = (num_frames - 1) // self.vae_scale_factor_temporal + 1
 
                 cond_to_concat = cond_to_concat.to(device=cond_latent.device, dtype=cond_latent.dtype)
-                cond_to_concat_resze = resize_traj_and_ray(cond_to_concat, 
+                cond_to_concat_resze = resize_traj_and_ray(
+                    cond_to_concat, 
                     mem_size=n_prev, future_size=n_fut,
                     height=cond_latent.shape[-2], width=cond_latent.shape[-1]
                 )

@@ -12,8 +12,8 @@ from scipy.spatial.transform import Rotation
 
 def get_cam2base(poses, init_pose=None, init_c2b=None, c2e=None):
     """
-    poses:    T*7 ndarray. The following poses: T*{xyz+quat(xyzw)}
-    c2e:      4x4 ndarray. The camera-to-end extrinsic
+    poses:    T * 7 ndarray. The following poses: T * {xyz + quat(xyzw)}
+    c2e:      4 x 4 ndarray. The camera-to-end extrinsic
     init_pose:  7 ndarray. The initial pose: {xyz+quat(xyzw)}
     init_c2b: 4x4 ndarray. The camera-to-base extrinsic of the first frame
     """
@@ -23,7 +23,6 @@ def get_cam2base(poses, init_pose=None, init_c2b=None, c2e=None):
 
     ###    cam2base = end2base @ cam2end = pose @ cam2end
     ### -> cam2end = pose^-1 @ cam2base
-
     if c2e is None:
         ### the first pose matrix (= end-to-base) of left or right end-effector         
         pose_mat = np.eye(4)
@@ -69,15 +68,14 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
                         proprio_stats.h5
                 ...
     """
-    
     os.makedirs(save_root, exist_ok=True)
 
     ### get actions
     h5_file = os.path.join(data_root, "proprio_stats", task_id, episode_id, "proprio_stats.h5")
     with h5py.File(h5_file, "r") as fid:
-        all_abs_gripper = np.array(fid[f"state/effector/position"], dtype=np.float32)[sidx:eidx]
-        all_ends_p = np.array(fid["state/end/position"], dtype=np.float32)[sidx:eidx]
-        all_ends_o = np.array(fid["state/end/orientation"], dtype=np.float32)[sidx:eidx]
+        all_abs_gripper = np.array(fid[f"state/effector/position"], dtype=np.float32)[sidx: eidx]
+        all_ends_p = np.array(fid["state/end/position"], dtype=np.float32)[sidx: eidx]
+        all_ends_o = np.array(fid["state/end/orientation"], dtype=np.float32)[sidx: eidx]
 
     ### actions: t, 16
     ### 7-quat_l, 1-gripper_l, 7-quat_r, 1-gripper_r)
@@ -90,7 +88,6 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
     ### get extrinsics and intrinsics
     if aligned_extrinsic_available:
         ### Camera-to-base extrinsics of all frames are available.
-        
         for cam in cams:
             c2bs = []
             with open(os.path.join(episode_root, "parameters", "camera", f"{cam}_extrinsic_params_aligned.json")) as f:
@@ -110,11 +107,8 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
         ### c2b_head should be fixed
         ### c2b_hand should be 
         for cam in cams:
-            
             with open(os.path.join(episode_root, "parameters", "camera", f"{cam}_extrinsic_params_aligned.json")) as f:
-
                 ### assume we only have one extrinsic value
-
                 ex = json.load(f)[0]
 
                 if cam == "head":
@@ -128,7 +122,6 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
 
                     ### we assume the head camera keeps unchanged
                     c2bs = np.repeat(np.expand_dims(c2b_0, axis=0), actions.shape[0], axis=0)
-
                 else:
                     ### the first extrinsic matrix (= camera-to-base)
                     c2b_0 = np.eye(4)
@@ -147,9 +140,7 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
                     c2bs = get_cam2base(poses, init_pose=init_pose, init_c2b=c2b_0, c2e=None)
                     c2bs = np.concatenate((np.expand_dims(c2b_0, axis=0), c2bs), axis=0)
 
-
             np.save(os.path.join(save_root, f"extrinsic_{cam}.npy"), c2bs)
-
 
     with open(os.path.join(episode_root, "parameters", "camera", f"{cam}_intrinsic_params.json")) as f:
         intrinsic_info = json.load(f)["intrinsic"]
@@ -161,7 +152,6 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
     ### 3,3
     np.save(os.path.join(save_root, f"intrinsic_{cam}.npy"), intrinsic)
 
-
     ### get frames
     for cam in cams:
         os.makedirs(os.path.join(save_root, f"{cam}_color"), exist_ok=True)
@@ -170,12 +160,13 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
             video_stream = container.streams.video[0]
             cnt = 0
             for i, frame in enumerate(container.decode(video_stream)):
-                if i>=sidx and i<sidx+n_mem: ### The first frame is used as memories.
+                if i >= sidx and i < sidx + n_mem: ### The first frame is used as memories.
                     frame_ndarray = frame.to_ndarray(format='bgr24')
                     cv2.imwrite(os.path.join(save_root, f"{cam}_color", f"{cnt}.png"), frame_ndarray)
-                    cnt+=1
-                if i>=sidx+n_mem:
+                    cnt += 1
+                if i >= sidx + n_mem:
                     break
+
 
 def args_parser():
     parser = argparse.ArgumentParser(
@@ -193,9 +184,16 @@ def args_parser():
     return args
 
 
-
 if __name__ == "__main__":
 
     args = args_parser()
-
-    reorganize_gesim_inputs(args.data_root, args.task_id, args.episode_id, args.save_root, int(args.valid_start), int(args.valid_end), int(args.n_mem), aligned_extrinsic_available=True)
+    reorganize_gesim_inputs(
+        args.data_root,
+        args.task_id,
+        args.episode_id,
+        args.save_root,
+        int(args.valid_start),
+        int(args.valid_end),
+        int(args.n_mem),
+        aligned_extrinsic_available=True
+    )
