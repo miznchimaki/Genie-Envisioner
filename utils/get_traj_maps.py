@@ -60,7 +60,6 @@ def simple_radius_gen_func(xyzs, c_xyzs):
 
 
 def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
-    
     h, w = sample_size
     colormap_l = cm.Greens
     colormap_r = cm.Reds

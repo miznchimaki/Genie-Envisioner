@@ -547,8 +547,9 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
         num_channels_latents = self.vae.z_dim
         if video.shape[2] > n_prev:  # pyright: ignore
             video = video[:, :, :n_prev]  # pyright: ignore
-        latents, conditioning_latents, cond_indicator, \
-        uncond_indicator, cond_mask, uncond_mask = self.prepare_latents(
+        latents, conditioning_latents, \
+        cond_indicator, uncond_indicator, \
+        cond_mask, uncond_mask = self.prepare_latents(
             video,  # memory only! (b v) c t h w
             batch_size * n_view,
             num_channels_latents,
@@ -783,18 +784,18 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
             latents = latents.to(device=device, dtype=dtype)
         latents = latents * self.scheduler.config.sigma_max  # sigma_max = 80.0
 
-        padding_shape = (batch_size, 1, num_cond_latent_frames+num_latent_frames, latent_height, latent_width)
+        padding_shape = (batch_size, 1, num_cond_latent_frames + num_latent_frames, latent_height, latent_width)
         ones_padding = latents.new_ones(padding_shape)
         zeros_padding = latents.new_zeros(padding_shape)
 
-        cond_indicator = latents.new_zeros(1, 1, num_cond_latent_frames+num_latent_frames, 1, 1)
-        cond_indicator[:, :, :num_cond_latent_frames] = 1.0
+        cond_indicator = latents.new_zeros(1, 1, num_cond_latent_frames + num_latent_frames, 1, 1)
+        cond_indicator[:, :, : num_cond_latent_frames] = 1.0
         cond_mask = cond_indicator * ones_padding + (1 - cond_indicator) * zeros_padding
 
         uncond_indicator = uncond_mask = None  # equals cond_indicator and cond_mask
         if do_classifier_free_guidance:
-            uncond_indicator = latents.new_zeros(1, 1, num_cond_latent_frames+num_latent_frames, 1, 1)
-            uncond_indicator[:, :, :num_cond_latent_frames] = 1.0
+            uncond_indicator = latents.new_zeros(1, 1, num_cond_latent_frames + num_latent_frames, 1, 1)
+            uncond_indicator[:, :, : num_cond_latent_frames] = 1.0
             uncond_mask = uncond_indicator * ones_padding + (1 - uncond_indicator) * zeros_padding
 
         return latents, init_latents, cond_indicator, uncond_indicator, cond_mask, uncond_mask

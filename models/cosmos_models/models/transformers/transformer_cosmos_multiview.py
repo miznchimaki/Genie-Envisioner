@@ -475,10 +475,10 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
             post_patch_num_frames = num_frames // p_t
             post_patch_height = height // p_h
             post_patch_width = width // p_w
-            
+
             hidden_states = self.patch_embed(hidden_states)
             hidden_states = hidden_states.flatten(1, 3)  # [B, T, H, W, C] -> [B, THW, C]
-            
+
             # 4. Timestep embeddings
             if timestep.ndim == 1:
                 temb, embedded_timestep = self.time_embed(hidden_states, timestep)
@@ -505,7 +505,6 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
                 temb = temb + vemb
                 # embedded_timestep = embedded_timestep + embedded_view
 
-
         if return_action:
             ### when video_states_buffer is not None, action blocks will directly use the input buffers
             ### when video_states_buffer is None, store_buffer should be true to save video buffers
@@ -514,8 +513,12 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
             if history_action_state is not None:
                 action_states = torch.cat((history_action_state, action_states), dim=1)
                 action_timestep = torch.cat((torch.zeros_like(action_timestep[:,0:1]), action_timestep), dim=1)
-
-            action_temb, action_embedded_timestep, action_rotary_emb, action_hidden_states = preprocessing_action_states(self, action_states, action_timestep)
+            action_temb, action_embedded_timestep, \
+            action_rotary_emb, action_hidden_states = preprocessing_action_states(
+                self,
+                action_states,
+                action_timestep
+            )
 
         # 5. Transformer blocks
         for block_idx, block in enumerate(self.transformer_blocks):
@@ -537,7 +540,7 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
                         video_states_buffer.append(hidden_states.clone())
                 else:
                     hidden_states = video_states_buffer[block_idx]
-                
+
                 if return_action:
                     ### final_hidden_states:  video features, b (v t h w) c
                     ### action_hidden_states: random actions, b v c
@@ -606,7 +609,7 @@ class MultiViewCosmosTransformer3DModel(ModelMixin, ConfigMixin):
         if return_action:
             if self.action_final_embeddings:
                 action_scale_shift_values = self.action_scale_shift_table[None, None] + action_embedded_timestep[:, :, None]
-                action_shift, action_scale = action_scale_shift_values[:,:,0], action_scale_shift_values[:,:,1]
+                action_shift, action_scale = action_scale_shift_values[:, :, 0], action_scale_shift_values[:, :, 1]
                 action_hidden_states = self.action_norm_out(action_hidden_states)
                 action_hidden_states = action_hidden_states * (1 + action_scale) + action_shift
             else:
