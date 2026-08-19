@@ -70,12 +70,20 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
     if isinstance(pose, np.ndarray):
         pose = torch.tensor(pose, dtype=torch.float32)
 
-    ee_key_pts = torch.tensor([
-        [0, 0, 0, 1],
-        [0.1, 0, 0, 1],
-        [0, 0.1, 0, 1],
-        [0, 0, 0.1, 1]
-    ], dtype=torch.float32, device=pose.device).view(1,1,4,4).permute(0,1,3,2)
+    ee_key_pts = torch.tensor(
+        [
+            [0, 0, 0, 1],
+            [0.1, 0, 0, 1],
+            [0, 0.1, 0, 1],
+            [0, 0, 0.1, 1]
+        ],
+        dtype=torch.float32,
+        device=pose.device
+    ).view(
+        1, 1, 4, 4
+    ).permute(
+        0, 1, 3, 2
+    )
 
     ### 1, t, 4, 4
     pose_l_mat = get_transformation_matrix_from_quat(pose[:, 0: 7]).unsqueeze(dim=0)

@@ -609,8 +609,10 @@ class GeSimCosmos2Pipeline(DiffusionPipeline):
                 cond_to_concat = cond_to_concat.to(device=cond_latent.device, dtype=cond_latent.dtype)
                 cond_to_concat_resze = resize_traj_and_ray(
                     cond_to_concat, 
-                    mem_size=n_prev, future_size=n_fut,
-                    height=cond_latent.shape[-2], width=cond_latent.shape[-1]
+                    mem_size=n_prev,
+                    future_size=n_fut,
+                    height=cond_latent.shape[-2],
+                    width=cond_latent.shape[-1]
                 )
 
                 cond_latent = torch.cat([cond_latent, cond_to_concat_resze], dim=1)  # channel

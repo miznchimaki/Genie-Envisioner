@@ -86,7 +86,7 @@ data:
     sample_n_frames: 360
     preprocess :  'resize'
     valid_cam :  ['head', 'hand_left', 'hand_right']
-    chunk: 25 ### 4n+1 for cosmos without padding frames
+    chunk: 25 ### 4n + 1 for cosmos without padding frames
     action_chunk: 25
     n_previous: 4
   val:

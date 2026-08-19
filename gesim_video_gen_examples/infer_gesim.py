@@ -244,7 +244,7 @@ def infer(
     negative_prompt = "The video captures a series of frames showing ugly scenes, static with no motion, motion blur, over-saturation, shaky footage, low resolution, grainy texture, pixelated images, poorly lit areas, underexposed and overexposed scenes, poor color balance, washed out colors, choppy sequences, jerky movements, low frame rate, artifacting, color banding, unnatural transitions, outdated special effects, fake elements, unconvincing visuals, poorly edited content, jump cuts, visual noise, and flickering. Overall, the video is of poor quality."
 
     nall = trajs.shape[2]
-    nchunk = int(np.ceil((nall-args.data['train']['n_previous'])/args.data['train']['chunk']))
+    nchunk = int(np.ceil((nall - args.data['train']['n_previous']) / args.data['train']['chunk']))
     
     videos = obs.clone()
     mem_idxes = list(range(args.data['train']['n_previous']))
@@ -255,12 +255,11 @@ def infer(
         cond_to_concat[:, :, args.data['train']['n_previous']: args.data['train']['n_previous'] + args.data['train']['chunk']]
     ), dim=2)
 
-    trajs = ichunk_cond_to_concat[:3].clone()
+    trajs = ichunk_cond_to_concat[: 3].clone()
 
     for ichunk in range(nchunk):
-
         preds = pipe.infer(
-            video=obs.permute(0,2,1,3,4).to(device), # -> v, t, c, h, w
+            video=obs.permute(0, 2, 1, 3, 4).to(device), # -> v, t, c, h, w
             cond_to_concat=rearrange(ichunk_cond_to_concat, "c v t h w -> v c t h w"), 
             prompt=[prompt, ],
             negative_prompt=negative_prompt,
@@ -277,7 +276,6 @@ def infer(
         )['frames'] # preds: v c t h w , range -1 to 1 (could exceed range)
 
         videos = torch.cat((videos, preds.data.cpu()), dim=2) # v c t h w
-
         videos = torch.clamp(videos, min=-1, max=1)
 
         if ichunk < nchunk-1:
@@ -291,8 +289,8 @@ def infer(
                 cond_to_concat[:, :, args.data['train']['n_previous'] + (ichunk + 1) * args.data['train']['chunk']: args.data['train']['n_previous'] + (ichunk + 2) * args.data['train']['chunk']]
             ),dim=2)
 
-            if ichunk_cond_to_concat.shape[2]<args.data['train']['chunk']+args.data['train']['n_previous']:
-                ichunk_cond_to_concat = torch.cat([ichunk_cond_to_concat,] + [ichunk_cond_to_concat[:,:,-1:],]*(args.data['train']['chunk']-ichunk_cond_to_concat.shape[2]-args.data['train']['n_previous']), dim=2)
+            if ichunk_cond_to_concat.shape[2] < args.data['train']['chunk'] + args.data['train']['n_previous']:
+                ichunk_cond_to_concat = torch.cat([ichunk_cond_to_concat,] + [ichunk_cond_to_concat[:, :, -1:],] * (args.data['train']['chunk'] - ichunk_cond_to_concat.shape[2] - args.data['train']['n_previous']), dim=2)
 
     video_to_save = torch.cat((rearrange(videos[:, :, : ori_trajs.shape[2]], 'v c t h w -> c t h (v w)', v=v), rearrange(ori_trajs, 'c v t h w -> c t h (v w)', v=v),), dim=2)
 
