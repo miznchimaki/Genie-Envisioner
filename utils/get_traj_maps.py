@@ -154,7 +154,7 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
                 ["left", "right"],
                 [normalized_value_l, normalized_value_r]
             ):
-                base = np.array(points[0]) # points:[4,3]
+                base = np.array(points[0]) # points:[4, 2]
                 if base[0] < 0 or base[0] >= w or base[1] < 0 or base[1] >= h:
                     continue
                 point = np.array(points[0][: 2])
@@ -170,7 +170,7 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
                 [color_list_l, color_list_r],
                 ["left", "right"]
             ):
-                base = np.array(points[0]) # points:[4,3]
+                base = np.array(points[0]) # points:[4, 2]
                 if base[0] < 0 or base[0] >= w or base[1] < 0 or base[1] >= h:
                     continue
                 for i, point in enumerate(points):
