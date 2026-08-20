@@ -26,8 +26,8 @@ def get_cam2base(poses, init_pose=None, init_c2b=None, c2e=None):
     if c2e is None:
         ### the first pose matrix (= end-to-base) of left or right end-effector         
         pose_mat = np.eye(4)
-        pose_mat[:3,:3] = Rotation.from_quat(init_pose[3:7]).as_matrix()
-        pose_mat[:3,3] = init_pose[:3]
+        pose_mat[: 3,: 3] = Rotation.from_quat(init_pose[3: 7]).as_matrix()
+        pose_mat[: 3, 3] = init_pose[: 3]
 
         ### Get cam2end from the first pose matrix and the first cam2base matrix
         c2e = np.dot(np.linalg.inv(pose_mat), init_c2b)
@@ -36,8 +36,8 @@ def get_cam2base(poses, init_pose=None, init_c2b=None, c2e=None):
     c2bs = []
     for _i in range(poses.shape[0]):
         pose_mat = np.eye(4)
-        pose_mat[:3,:3] = Rotation.from_quat(poses[_i, 3:7]).as_matrix()
-        pose_mat[:3,3] = poses[_i, :3]
+        pose_mat[: 3, : 3] = Rotation.from_quat(poses[_i, 3: 7]).as_matrix()
+        pose_mat[: 3, 3] = poses[_i, : 3]
         c2b = np.dot(pose_mat, c2e)
         c2bs.append(c2b)
     c2bs = np.stack(c2bs, axis=0)
@@ -96,8 +96,8 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
                     c2b = np.eye(4)
                     R = ex["extrinsic"]["rotation_matrix"]
                     T = ex["extrinsic"]["translation_vector"]
-                    c2b[:3,:3] = R
-                    c2b[:3,3] = T
+                    c2b[: 3, : 3] = R
+                    c2b[: 3, 3] = T
                     c2bs.append(c2b)
             ### t,4,4
             c2bs = np.stack(c2bs, axis=0)[sidx:eidx]
@@ -112,13 +112,12 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
                 ex = json.load(f)[0]
 
                 if cam == "head":
-                    
                     ### the first extrinsic matrix (= camera-to-base)
                     c2b_0 = np.eye(4)
                     R = ex["extrinsic"]["rotation_matrix"]
                     T = ex["extrinsic"]["translation_vector"]
-                    c2b_0[:3,:3] = R
-                    c2b_0[:3,3] = T
+                    c2b_0[: 3, : 3] = R
+                    c2b_0[: 3, 3] = T
 
                     ### we assume the head camera keeps unchanged
                     c2bs = np.repeat(np.expand_dims(c2b_0, axis=0), actions.shape[0], axis=0)
@@ -127,8 +126,8 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
                     c2b_0 = np.eye(4)
                     R = ex["extrinsic"]["rotation_matrix"]
                     T = ex["extrinsic"]["translation_vector"]
-                    c2b_0[:3,:3] = R
-                    c2b_0[:3,3] = T
+                    c2b_0[: 3, : 3] = R
+                    c2b_0[: 3, 3] = T
 
                     if cam == "hand_left":
                         init_pose = actions[0, 0:7]
@@ -145,10 +144,10 @@ def reorganize_gesim_inputs(data_root, task_id, episode_id, save_root, sidx=0, e
     with open(os.path.join(episode_root, "parameters", "camera", f"{cam}_intrinsic_params.json")) as f:
         intrinsic_info = json.load(f)["intrinsic"]
         intrinsic = np.eye(3)
-        intrinsic[0,0] = intrinsic_info["fx"]
-        intrinsic[1,1] = intrinsic_info["fy"]
-        intrinsic[0,2] = intrinsic_info["ppx"]
-        intrinsic[1,2] = intrinsic_info["ppy"]
+        intrinsic[0, 0] = intrinsic_info["fx"]
+        intrinsic[1, 1] = intrinsic_info["fy"]
+        intrinsic[0, 2] = intrinsic_info["ppx"]
+        intrinsic[1, 2] = intrinsic_info["ppy"]
     ### 3,3
     np.save(os.path.join(save_root, f"intrinsic_{cam}.npy"), intrinsic)
 
@@ -185,7 +184,6 @@ def args_parser():
 
 
 if __name__ == "__main__":
-
     args = args_parser()
     reorganize_gesim_inputs(
         args.data_root,

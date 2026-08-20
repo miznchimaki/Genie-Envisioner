@@ -92,22 +92,23 @@ def get_traj_maps(pose, w2c, c2w, intrinsic, sample_size, radius_gen_func=None):
     ee2cam_l = torch.matmul(w2c, pose_l_mat)
     ee2cam_r = torch.matmul(w2c, pose_r_mat)
 
-    correct_matrix = torch.tensor([
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0.23],
-        [0, 0, 0, 1]
-    ],
-    dtype=torch.float32,
-    device=pose.device
-    ).view(1,1,4,4)
+    correct_matrix = torch.tensor(
+        [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0.23],
+            [0, 0, 0, 1]
+        ],
+        dtype=torch.float32,
+        device=pose.device
+    ).view(1, 1, 4, 4)
     ee2cam_l = torch.matmul(ee2cam_l, correct_matrix)
     ee2cam_r = torch.matmul(ee2cam_r, correct_matrix)
 
     ### v, t, 4, 4
     pts_l = torch.matmul(ee2cam_l, ee_key_pts)
     pts_r = torch.matmul(ee2cam_r, ee_key_pts)
-    
+
     ### v, 1, 3, 3
     intrinsic = intrinsic.unsqueeze(1)
 
